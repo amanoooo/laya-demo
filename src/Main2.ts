@@ -1,3 +1,6 @@
+import GameConfig from "./GameConfig";
+
+
 // 程序入口
 class GameMain {
     private tMap: Laya.TiledMap;
@@ -19,15 +22,38 @@ class GameMain {
         //创建Rectangle实例，视口区域
         var viewRect: Laya.Rectangle = new Laya.Rectangle();
         //创建TiledMap地图，加载orthogonal.json后，执行回调方法onMapLoaded()
-        // this.tMap.createMap("res/demo1.json", viewRect, Laya.Handler.create(this, this.onMapLoaded));
+        this.tMap.createMap("res/demo1.json", viewRect, Laya.Handler.create(this, this.onMapLoaded));
 
-        // Laya.Scene.open('Start.scene')
-        let gameMain = new ui.view.gameMainUI();
-        Laya.stage.addChild(gameMain);
 
-        Laya.loader.load(this.skin, Laya.Handler.create(this, this.onLoaded));
-        // Laya.Handler.create(this, this.onLoaded)
+        if (window["Laya3D"]) Laya3D.init(GameConfig.width, GameConfig.height);
+		else Laya.init(GameConfig.width, GameConfig.height, Laya["WebGL"]);
+		Laya["Physics"] && Laya["Physics"].enable();
+		Laya["DebugPanel"] && Laya["DebugPanel"].enable();
+		Laya.stage.scaleMode = GameConfig.scaleMode;
+		Laya.stage.screenMode = GameConfig.screenMode;
+		Laya.stage.alignV = GameConfig.alignV;
+		Laya.stage.alignH = GameConfig.alignH;
+		//兼容微信不支持加载scene后缀场景
+		Laya.URL.exportSceneToJson = GameConfig.exportSceneToJson;
+
+		//打开调试面板（通过IDE设置调试模式，或者url地址增加debug=true参数，均可打开调试面板）
+		if (GameConfig.debug || Laya.Utils.getQueryString("debug") == "true") Laya.enableDebugPanel();
+		if (GameConfig.physicsDebug && Laya["PhysicsDebugDraw"]) Laya["PhysicsDebugDraw"].enable();
+		if (GameConfig.stat) Laya.Stat.show();
+		Laya.alertGlobalError = true;
+
+		//激活资源版本控制，version.json由IDE发布功能自动生成，如果没有也不影响后续流程
+		Laya.ResourceVersion.enable("version.json", Laya.Handler.create(this, this.onVersionLoaded), Laya.ResourceVersion.FILENAME_VERSION);
+
     }
+    onConfigLoaded(): void {
+		//加载IDE指定的场景
+		GameConfig.startScene && Laya.Scene.open(GameConfig.startScene);
+    }
+    onVersionLoaded(): void {
+		//激活大小图映射，加载小图的时候，如果发现小图在大图合集里面，则优先加载大图合集，而不是小图
+		Laya.AtlasInfoManager.enable("fileconfig.json", Laya.Handler.create(this, this.onConfigLoaded));
+	}
     private onMapLoaded(): void {
         //设置缩放中心点为视口的左上角
         this.tMap.setViewPortPivotByScale(0, 0);

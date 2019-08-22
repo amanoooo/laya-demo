@@ -1,1 +1,1 @@
-{"type":"Scene","props":{"width":640,"height":1136},"compId":2,"child":[{"type":"Label","props":{"y":536,"x":213,"text":"fight scene","styleSkin":"comp/label.png","color":"#db302d"},"compId":3}],"loadList":["comp/label.png"],"loadList3D":[]}
+{"type":"Scene","props":{"width":200,"height":200},"compId":2,"child":[{"type":"TextInput","props":{"y":59,"x":32,"text":"TextInput","skin":"comp/textinput.png"},"compId":4}],"loadList":["comp/textinput.png"],"loadList3D":[]}
