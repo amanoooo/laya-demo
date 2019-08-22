@@ -1,0 +1,1 @@
+{"type":"Scene","props":{"width":640,"height":1136},"compId":2,"child":[{"type":"Label","props":{"y":536,"x":213,"text":"fight scene","styleSkin":"comp/label.png","color":"#db302d"},"compId":3}],"loadList":["comp/label.png"],"loadList3D":[]}
