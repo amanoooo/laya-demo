@@ -1,7 +1,11 @@
+import { game } from './Main2'
+
+
+
 /*
-   ImageRunTime逻辑类 
+   DirectionRunTime逻辑类 
    */
-export default class ImageRunTime extends Laya.Button {
+export default class DirectionRunTime extends Laya.Button {
     public scaleTime: number = 100;
     constructor() {
         super();
@@ -21,22 +25,25 @@ export default class ImageRunTime extends Laya.Button {
     private scaleSmall(): void {
         //缩小至0.8的缓动效果
         Laya.Tween.to(this, { scaleX: 0.8, scaleY: 0.8 }, this.scaleTime);
-        console.log('this ', this)
         let Hero: Laya.Image
         Hero = this.parent.parent.getChildByName('Hero') as Laya.Image
 
         switch (this.name) {
             case 'up':
-                Hero.pivotY += +5
+                // Hero.pivotY += +5
+                game.move('up')
                 break;
-            case 'down':
-                Hero.pivotY += -5
+                case 'down':
+                // Hero.pivotY += -5
+                game.move('down')
                 break;
-            case 'left':
-                Hero.pivotX += 5
+                case 'left':
+                // Hero.pivotX += 5
+                game.move('left')
                 break;
-            case 'right':
-                Hero.pivotX += -5
+                case 'right':
+                // Hero.pivotX += -5
+                game.move('right')
                 break;
             default:
                 throw new Error('invalid name')

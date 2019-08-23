@@ -1,7 +1,7 @@
-(function () {
+var laya = (function (exports) {
    'use strict';
 
-   class ImageRunTime extends Laya.Button {
+   class DirectionRunTime extends Laya.Button {
        constructor() {
            super();
            this.scaleTime = 100;
@@ -14,21 +14,20 @@
        }
        scaleSmall() {
            Laya.Tween.to(this, { scaleX: 0.8, scaleY: 0.8 }, this.scaleTime);
-           console.log('this ', this);
            let Hero;
            Hero = this.parent.parent.getChildByName('Hero');
            switch (this.name) {
                case 'up':
-                   Hero.pivotY += +5;
+                   game.move('up');
                    break;
                case 'down':
-                   Hero.pivotY += -5;
+                   game.move('down');
                    break;
                case 'left':
-                   Hero.pivotX += 5;
+                   game.move('left');
                    break;
                case 'right':
-                   Hero.pivotX += -5;
+                   game.move('right');
                    break;
                default:
                    throw new Error('invalid name');
@@ -203,7 +202,7 @@
        constructor() { }
        static init() {
            var reg = Laya.ClassUtils.regClass;
-           reg("DirectionRunTime.ts", ImageRunTime);
+           reg("DirectionRunTime.ts", DirectionRunTime);
            reg("script/GameUI.ts", GameUI);
            reg("script/GameControl.ts", GameControl);
            reg("script/Bullet.ts", Bullet);
@@ -229,6 +228,9 @@
            this.scaleValue = 0;
            this.MapX = 0;
            this.MapY = 0;
+           this.offsetX = 0;
+           this.offsetY = 0;
+           this.offsetUnit = 10;
            this.skin = "button.png";
            Laya.init(Laya.Browser.width, Laya.Browser.height, Laya.WebGL);
            Laya.stage.bgColor = "#5a7b9a";
@@ -272,6 +274,8 @@
        mouseMove() {
            var moveX = this.MapX - (Laya.stage.mouseX - this.mLastMouseX);
            var moveY = this.MapY - (Laya.stage.mouseY - this.mLastMouseY);
+           console.log('moveX', moveX);
+           console.log('moveY', moveY);
            this.tMap.moveViewPort(moveX, moveY);
        }
        mouseUp() {
@@ -287,16 +291,32 @@
        resize() {
            this.tMap.changeViewPort(this.MapX, this.MapY, Laya.Browser.width, Laya.Browser.height);
        }
-       onLoaded() {
-           const btn = new Laya.Button(this.skin);
-           Laya.stage.addChild(btn);
-           btn.width = 50;
-           btn.height = 50;
-           btn.pos(1, 1);
-           btn.labelSize = 30;
-           btn.label = "上";
+       move(direction) {
+           switch (direction) {
+               case 'left':
+                   this.MapX = this.MapX - this.offsetUnit;
+                   break;
+               case 'right':
+                   this.MapX = this.MapX + this.offsetUnit;
+                   break;
+               case 'up':
+                   this.MapY = this.MapY - this.offsetUnit;
+                   break;
+               case 'down':
+                   this.MapY = this.MapY + this.offsetUnit;
+                   break;
+               default:
+                   break;
+           }
+           console.log('this.MapX', this.MapX);
+           console.log('this.MapY', this.MapY);
+           this.tMap.moveViewPort(this.MapX, this.MapY);
        }
    }
-   new GameMain();
+   const game = new GameMain();
 
-}());
+   exports.game = game;
+
+   return exports;
+
+}({}));
