@@ -35,6 +35,18 @@ var laya = (function (exports) {
        }
    }
 
+   class MainRunTime extends Laya.Scene {
+       constructor() {
+           super();
+       }
+       onOpened() {
+           const DirectionWrapper = this.getChildByName('Direction');
+           DirectionWrapper.scene.pos(Laya.Browser.width, Laya.Browser.height);
+           const Hero = this.getChildByName('Hero');
+           Hero.pos(Laya.Browser.width / 2, Laya.Browser.height / 2);
+       }
+   }
+
    var REG = Laya.ClassUtils.regClass;
    var ui;
    (function (ui) {
@@ -203,21 +215,22 @@ var laya = (function (exports) {
        static init() {
            var reg = Laya.ClassUtils.regClass;
            reg("DirectionRunTime.ts", DirectionRunTime);
+           reg("MainRunTime.ts", MainRunTime);
            reg("script/GameUI.ts", GameUI);
            reg("script/GameControl.ts", GameControl);
            reg("script/Bullet.ts", Bullet);
            reg("script/DropBox.ts", DropBox);
        }
    }
-   GameConfig.width = 640;
-   GameConfig.height = 1136;
+   GameConfig.width = 375;
+   GameConfig.height = 667;
    GameConfig.scaleMode = "fixedwidth";
    GameConfig.screenMode = "none";
    GameConfig.alignV = "top";
    GameConfig.alignH = "left";
    GameConfig.startScene = "Start.scene";
    GameConfig.sceneRoot = "";
-   GameConfig.debug = false;
+   GameConfig.debug = true;
    GameConfig.stat = false;
    GameConfig.physicsDebug = false;
    GameConfig.exportSceneToJson = true;
@@ -232,15 +245,13 @@ var laya = (function (exports) {
            this.offsetY = 0;
            this.offsetUnit = 10;
            this.skin = "button.png";
-           Laya.init(Laya.Browser.width, Laya.Browser.height, Laya.WebGL);
-           Laya.stage.bgColor = "#5a7b9a";
+           console.log('width ', Laya.Browser.width);
+           console.log('height ', Laya.Browser.height);
            this.tMap = new Laya.TiledMap();
            var viewRect = new Laya.Rectangle();
            this.tMap.createMap("res/demo1.json", viewRect, Laya.Handler.create(this, this.onMapLoaded));
-           if (window["Laya3D"])
-               Laya3D.init(GameConfig.width, GameConfig.height);
-           else
-               Laya.init(GameConfig.width, GameConfig.height, Laya["WebGL"]);
+           Laya.init(Laya.Browser.width, Laya.Browser.height, Laya.WebGL);
+           Laya.stage.bgColor = "#5a7b9a";
            Laya["Physics"] && Laya["Physics"].enable();
            Laya["DebugPanel"] && Laya["DebugPanel"].enable();
            Laya.stage.scaleMode = GameConfig.scaleMode;
@@ -259,6 +270,7 @@ var laya = (function (exports) {
        }
        onConfigLoaded() {
            GameConfig.startScene && Laya.Scene.open(GameConfig.startScene);
+           this.resize2();
        }
        onVersionLoaded() {
            Laya.AtlasInfoManager.enable("fileconfig.json", Laya.Handler.create(this, this.onConfigLoaded));
@@ -274,8 +286,6 @@ var laya = (function (exports) {
        mouseMove() {
            var moveX = this.MapX - (Laya.stage.mouseX - this.mLastMouseX);
            var moveY = this.MapY - (Laya.stage.mouseY - this.mLastMouseY);
-           console.log('moveX', moveX);
-           console.log('moveY', moveY);
            this.tMap.moveViewPort(moveX, moveY);
        }
        mouseUp() {
@@ -290,6 +300,19 @@ var laya = (function (exports) {
        }
        resize() {
            this.tMap.changeViewPort(this.MapX, this.MapY, Laya.Browser.width, Laya.Browser.height);
+       }
+       resize2() {
+           let w = GameConfig.width;
+           let h = GameConfig.height;
+           console.log('w ', w);
+           console.log('h ', h);
+           let screen_wh_scale = Laya.Browser.width / Laya.Browser.height;
+           h = GameConfig.width / screen_wh_scale;
+           Laya.Scene.unDestroyedScenes.forEach(element => {
+               let s = element;
+               s.width = w;
+               s.height = h;
+           });
        }
        move(direction) {
            switch (direction) {
@@ -308,8 +331,6 @@ var laya = (function (exports) {
                default:
                    break;
            }
-           console.log('this.MapX', this.MapX);
-           console.log('this.MapY', this.MapY);
            this.tMap.moveViewPort(this.MapX, this.MapY);
        }
    }

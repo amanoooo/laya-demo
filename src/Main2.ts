@@ -18,18 +18,17 @@ class GameMain {
 
     constructor() {
         //初始化舞台
-        Laya.init(Laya.Browser.width, Laya.Browser.height, Laya.WebGL);
-        Laya.stage.bgColor = "#5a7b9a";
-        //创建TiledMap实例
+        console.log('width ', Laya.Browser.width);
+        console.log('height ', Laya.Browser.height);
+
+        
         this.tMap = new Laya.TiledMap();
-        //创建Rectangle实例，视口区域
         var viewRect: Laya.Rectangle = new Laya.Rectangle();
-        //创建TiledMap地图，加载orthogonal.json后，执行回调方法onMapLoaded()
         this.tMap.createMap("res/demo1.json", viewRect, Laya.Handler.create(this, this.onMapLoaded));
-
-
-        if (window["Laya3D"]) Laya3D.init(GameConfig.width, GameConfig.height);
-        else Laya.init(GameConfig.width, GameConfig.height, Laya["WebGL"]);
+        
+        Laya.init(Laya.Browser.width, Laya.Browser.height, Laya.WebGL);
+        // Laya.init(GameConfig.width, GameConfig.height, Laya["WebGL"]);
+        Laya.stage.bgColor = "#5a7b9a";
         Laya["Physics"] && Laya["Physics"].enable();
         Laya["DebugPanel"] && Laya["DebugPanel"].enable();
         Laya.stage.scaleMode = GameConfig.scaleMode;
@@ -52,6 +51,7 @@ class GameMain {
     onConfigLoaded(): void {
         //加载IDE指定的场景
         GameConfig.startScene && Laya.Scene.open(GameConfig.startScene);
+        this.resize2()
     }
     onVersionLoaded(): void {
         //激活大小图映射，加载小图的时候，如果发现小图在大图合集里面，则优先加载大图合集，而不是小图
@@ -94,6 +94,20 @@ class GameMain {
     private resize(): void {
         //改变视口大小
         this.tMap.changeViewPort(this.MapX, this.MapY, Laya.Browser.width, Laya.Browser.height);
+    }
+    resize2(): void {
+        let w = GameConfig.width;
+        let h = GameConfig.height;
+        console.log('w ', w);
+        console.log('h ', h);
+
+        let screen_wh_scale = Laya.Browser.width / Laya.Browser.height;
+        h = GameConfig.width / screen_wh_scale;
+        Laya.Scene.unDestroyedScenes.forEach(element => {
+            let s = element as Laya.Scene;
+            s.width = w;
+            s.height = h;
+        });
     }
 
     move(direction: string): void {
