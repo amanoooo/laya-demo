@@ -9,11 +9,13 @@ var laya = (function (exports) {
            this.on(Laya.Event.MOUSE_UP, this, this.scaleBig);
            this.on(Laya.Event.MOUSE_OUT, this, this.scaleBig);
        }
-       scaleBig() {
+       scaleBig(e) {
+           e.stopPropagation();
            Laya.Tween.to(this, { scaleX: 1, scaleY: 1 }, this.scaleTime);
        }
-       scaleSmall() {
-           Laya.Tween.to(this, { scaleX: 0.8, scaleY: 0.8 }, this.scaleTime);
+       scaleSmall(e) {
+           e.stopPropagation();
+           Laya.Tween.to(this, { scaleX: 0.9, scaleY: 0.9 }, this.scaleTime);
            let Hero;
            Hero = this.parent.parent.getChildByName('Hero');
            switch (this.name) {
@@ -41,7 +43,7 @@ var laya = (function (exports) {
        }
        onOpened() {
            const DirectionWrapper = this.getChildByName('Direction');
-           DirectionWrapper.scene.pos(Laya.Browser.width, Laya.Browser.height);
+           DirectionWrapper.scene.pos(Laya.Browser.width - 70, Laya.Browser.height - 70);
            const Hero = this.getChildByName('Hero');
            Hero.pos(Laya.Browser.width / 2, Laya.Browser.height / 2);
        }
@@ -236,14 +238,62 @@ var laya = (function (exports) {
    GameConfig.exportSceneToJson = true;
    GameConfig.init();
 
+   class HTTP {
+       constructor() {
+           this.obj2urlParams = (obj = {}) => {
+               return Object.keys(obj).length === 0
+                   ? ''
+                   : Object.keys(obj)
+                       .filter(key => obj[key] !== undefined)
+                       .reduce((str, key) => `${str}${key}=${obj[key]}&`, '')
+                       .slice(0, -1)
+                       .replace(/^/, '?');
+           };
+           this.http = new Laya.HttpRequest;
+       }
+       get(url, params, caller, callback) {
+           this.caller = caller;
+           this.callback = callback;
+           this.http.once(Laya.Event.COMPLETE, this, this.onHttpRequestComplete);
+           this.http.once(Laya.Event.ERROR, this, this.onHttpRequestError);
+           this.http.send(url + this.obj2urlParams(params), null, 'get', 'json');
+           return this;
+       }
+       post(url, data, contentType, caller, callback) {
+           this.caller = caller;
+           this.callback = callback;
+           this.http.once(Laya.Event.COMPLETE, this, this.onHttpRequestComplete);
+           this.http.once(Laya.Event.ERROR, this, this.onHttpRequestError);
+           if (contentType == null) {
+               this.http.send(url, data, 'post', 'json');
+           }
+           else {
+               this.http.send(url, data, 'post', 'json', ["content-type", contentType]);
+           }
+           return this;
+       }
+       onHttpRequestError(e) {
+           this.callback.apply(this.caller, [{ error: 'Server Interal Error', status: 500 }]);
+       }
+       onHttpRequestComplete(e) {
+           const status = this.http.http.status;
+           if (status !== 200 || this.http.data.errMsg) {
+               this.callback.apply(this.caller, [{ error: this.http.data.payload || 'Client Logic Error', status }]);
+           }
+           else {
+               this.callback.apply(this.caller, [{ error: null, status, payload: this.http.data.payload }]);
+           }
+       }
+   }
+   var Http = new HTTP();
+
    class GameMain {
        constructor() {
            this.scaleValue = 0;
            this.MapX = 0;
            this.MapY = 0;
-           this.offsetX = 0;
-           this.offsetY = 0;
            this.offsetUnit = 10;
+           this.mapOffset = -50;
            this.skin = "button.png";
            console.log('width ', Laya.Browser.width);
            console.log('height ', Laya.Browser.height);
@@ -267,6 +317,13 @@ var laya = (function (exports) {
                Laya.Stat.show();
            Laya.alertGlobalError = true;
            Laya.ResourceVersion.enable("version.json", Laya.Handler.create(this, this.onVersionLoaded), Laya.ResourceVersion.FILENAME_VERSION);
+           this.test();
+       }
+       test() {
+           Http.get('http://localhost:3000/api/pos', { x: 1, y: 2 }, this, this.onTestSuccess);
+       }
+       onTestSuccess(res) {
+           console.log('res', res);
        }
        onConfigLoaded() {
            GameConfig.startScene && Laya.Scene.open(GameConfig.startScene);
@@ -282,20 +339,49 @@ var laya = (function (exports) {
            Laya.stage.on(Laya.Event.MOUSE_DOWN, this, this.mouseDown);
            Laya.stage.on(Laya.Event.MOUSE_UP, this, this.mouseUp);
            this.resize();
+           console.log('tMap', this.tMap);
        }
        mouseMove() {
            var moveX = this.MapX - (Laya.stage.mouseX - this.mLastMouseX);
            var moveY = this.MapY - (Laya.stage.mouseY - this.mLastMouseY);
+           console.log('moveX', moveX);
+           console.log('this.tMap.width', this.tMap.width);
+           if (moveX < this.mapOffset
+               || moveY < this.mapOffset
+               || moveX > this.tMap.width - this.mapOffset - Laya.Browser.width
+               || moveY > this.tMap.height - this.mapOffset - Laya.Browser.height) {
+               return;
+           }
            this.tMap.moveViewPort(moveX, moveY);
        }
        mouseUp() {
-           this.MapX = this.MapX - (Laya.stage.mouseX - this.mLastMouseX);
-           this.MapY = this.MapY - (Laya.stage.mouseY - this.mLastMouseY);
+           console.log('up mLastMouseX', this.mLastMouseX);
+           console.log('up mLastMouseY', this.mLastMouseY);
+           let _MapX = this.MapX - (Laya.stage.mouseX - this.mLastMouseX);
+           let _MapY = this.MapY - (Laya.stage.mouseY - this.mLastMouseY);
+           this.MapX = _MapX;
+           this.MapY = _MapY;
+           const maxOffsetX = this.tMap.width - this.mapOffset - Laya.Browser.width;
+           const maxOffsetY = this.tMap.height - this.mapOffset - Laya.Browser.height;
+           if (_MapX < this.mapOffset) {
+               this.MapX = this.mapOffset;
+           }
+           else if (_MapX > maxOffsetX) {
+               this.MapX = maxOffsetX;
+           }
+           if (_MapY < this.mapOffset) {
+               this.MapY = this.mapOffset;
+           }
+           else if (_MapY > maxOffsetY) {
+               this.MapY = maxOffsetY;
+           }
            Laya.stage.off(Laya.Event.MOUSE_MOVE, this, this.mouseMove);
        }
        mouseDown() {
            this.mLastMouseX = Laya.stage.mouseX;
            this.mLastMouseY = Laya.stage.mouseY;
+           console.log('down mLastMouseX', this.mLastMouseX);
+           console.log('down mLastMouseY', this.mLastMouseY);
            Laya.stage.on(Laya.Event.MOUSE_MOVE, this, this.mouseMove);
        }
        resize() {

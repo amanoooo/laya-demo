@@ -18,13 +18,15 @@ export default class DirectionRunTime extends Laya.Button {
         //添加鼠标离开事件侦听。离开时还原按钮。
         this.on(Laya.Event.MOUSE_OUT, this, this.scaleBig);
     }
-    private scaleBig(): void {
+    private scaleBig(e: Laya.Event): void {
         //变大还原的缓动效果
+        e.stopPropagation();
         Laya.Tween.to(this, { scaleX: 1, scaleY: 1 }, this.scaleTime);
     }
-    private scaleSmall(): void {
+    private scaleSmall(e: Laya.Event): void {
+        e.stopPropagation();
         //缩小至0.8的缓动效果
-        Laya.Tween.to(this, { scaleX: 0.8, scaleY: 0.8 }, this.scaleTime);
+        Laya.Tween.to(this, { scaleX: 0.9, scaleY: 0.9 }, this.scaleTime);
         let Hero: Laya.Image
         Hero = this.parent.parent.getChildByName('Hero') as Laya.Image
 

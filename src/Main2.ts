@@ -1,4 +1,5 @@
 import GameConfig from "./GameConfig";
+import Http, { MResponse } from "./Http";
 
 
 // 程序入口
@@ -9,23 +10,30 @@ class GameMain {
     private MapY: number = 0;
     private mLastMouseX: number;
     private mLastMouseY: number;
-    private offsetX: number = 0
-    private offsetY: number = 0
     private offsetUnit = 10
+    private mapOffset = -50
+
 
     //按钮资源路径
     private skin: string = "button.png";
+
+    test() {
+        Http.get('http://localhost:3000/api/pos', { x: 1, y: 2 }, this, this.onTestSuccess)
+    }
+    onTestSuccess(res: MResponse) {
+        console.log('res', res)
+    }
 
     constructor() {
         //初始化舞台
         console.log('width ', Laya.Browser.width);
         console.log('height ', Laya.Browser.height);
 
-        
+
         this.tMap = new Laya.TiledMap();
         var viewRect: Laya.Rectangle = new Laya.Rectangle();
         this.tMap.createMap("res/demo1.json", viewRect, Laya.Handler.create(this, this.onMapLoaded));
-        
+
         Laya.init(Laya.Browser.width, Laya.Browser.height, Laya.WebGL);
         // Laya.init(GameConfig.width, GameConfig.height, Laya["WebGL"]);
         Laya.stage.bgColor = "#5a7b9a";
@@ -47,6 +55,8 @@ class GameMain {
         //激活资源版本控制，version.json由IDE发布功能自动生成，如果没有也不影响后续流程
         Laya.ResourceVersion.enable("version.json", Laya.Handler.create(this, this.onVersionLoaded), Laya.ResourceVersion.FILENAME_VERSION);
 
+        this.test()
+
     }
     onConfigLoaded(): void {
         //加载IDE指定的场景
@@ -65,6 +75,7 @@ class GameMain {
         Laya.stage.on(Laya.Event.MOUSE_DOWN, this, this.mouseDown);
         Laya.stage.on(Laya.Event.MOUSE_UP, this, this.mouseUp);
         this.resize();
+        console.log('tMap', this.tMap)
 
     }
     /**
@@ -75,16 +86,45 @@ class GameMain {
         var moveY: number = this.MapY - (Laya.stage.mouseY - this.mLastMouseY)
         //移动地图视口
 
+        console.log('moveX', moveX);
+        console.log('this.tMap.width', this.tMap.width);
+
+        if (moveX < this.mapOffset
+            || moveY < this.mapOffset
+            || moveX > this.tMap.width - this.mapOffset - Laya.Browser.width
+            || moveY > this.tMap.height - this.mapOffset - Laya.Browser.height) {
+            return
+        }
         this.tMap.moveViewPort(moveX, moveY);
     }
     private mouseUp(): void {
-        this.MapX = this.MapX - (Laya.stage.mouseX - this.mLastMouseX);
-        this.MapY = this.MapY - (Laya.stage.mouseY - this.mLastMouseY);
+        console.log('up mLastMouseX', this.mLastMouseX);
+        console.log('up mLastMouseY', this.mLastMouseY);
+
+        let _MapX = this.MapX - (Laya.stage.mouseX - this.mLastMouseX)
+        let _MapY = this.MapY - (Laya.stage.mouseY - this.mLastMouseY);
+        this.MapX = _MapX
+        this.MapY = _MapY
+
+        const maxOffsetX = this.tMap.width - this.mapOffset - Laya.Browser.width
+        const maxOffsetY = this.tMap.height - this.mapOffset - Laya.Browser.height
+        if (_MapX < this.mapOffset) {
+            this.MapX = this.mapOffset
+        } else if (_MapX > maxOffsetX) {
+            this.MapX = maxOffsetX
+        }
+        if (_MapY < this.mapOffset) {
+            this.MapY = this.mapOffset
+        } else if (_MapY > maxOffsetY) {
+            this.MapY = maxOffsetY
+        }
         Laya.stage.off(Laya.Event.MOUSE_MOVE, this, this.mouseMove);
     }
     private mouseDown(): void {
-        this.mLastMouseX = Laya.stage.mouseX;
+        this.mLastMouseX = Laya.stage.mouseX
         this.mLastMouseY = Laya.stage.mouseY;
+        console.log('down mLastMouseX', this.mLastMouseX);
+        console.log('down mLastMouseY', this.mLastMouseY);
         Laya.stage.on(Laya.Event.MOUSE_MOVE, this, this.mouseMove);
     }
     /**
