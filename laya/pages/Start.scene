@@ -2,11 +2,11 @@
     "x":0,
     "type":"Scene",
     "selectedBox":2,
-    "selecteID":6,
+    "selecteID":12,
     "searchKey":"Scene",
     "props":{"sceneWidth":375,"sceneHeight":667,"sceneColor":"#000000","runtime":"MainRunTime.ts"},
     "nodeParent":-1,
-    "maxID":11,
+    "maxID":14,
     "label":"Scene",
     "isOpen":true,
     "isDirectory":true,
@@ -26,21 +26,6 @@
             "isAniNode":true,
             "hasChild":false,
             "compId":6,
-            "child":[
-                ]
-        },
-        {
-            "x":15,
-            "type":"Sprite",
-            "searchKey":"Sprite,Hero",
-            "props":{"y":333,"x":187,"width":50,"texture":"comp/duck.png","pivotY":25,"pivotX":25,"name":"Hero","height":50},
-            "nodeParent":2,
-            "label":"Hero",
-            "isOpen":null,
-            "isDirectory":false,
-            "isAniNode":true,
-            "hasChild":false,
-            "compId":8,
             "child":[
                 ]
         }],

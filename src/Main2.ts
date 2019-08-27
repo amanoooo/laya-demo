@@ -70,7 +70,7 @@ class GameMain {
     private onMapLoaded(): void {
         //设置缩放中心点为视口的左上角
         this.tMap.setViewPortPivotByScale(0, 0);
-        this.tMap.scale = 1;
+        this.tMap.scale = 2;
         Laya.stage.on(Laya.Event.RESIZE, this, this.resize);
         Laya.stage.on(Laya.Event.MOUSE_DOWN, this, this.mouseDown);
         Laya.stage.on(Laya.Event.MOUSE_UP, this, this.mouseUp);

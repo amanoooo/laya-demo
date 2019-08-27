@@ -44,8 +44,18 @@ var laya = (function (exports) {
        onOpened() {
            const DirectionWrapper = this.getChildByName('Direction');
            DirectionWrapper.scene.pos(Laya.Browser.width - 70, Laya.Browser.height - 70);
-           const Hero = this.getChildByName('Hero');
-           Hero.pos(Laya.Browser.width / 2, Laya.Browser.height / 2);
+           this.roleAni = new Laya.Animation();
+           console.log(111);
+           this.roleAni.width = 32;
+           this.roleAni.height = 32;
+           this.roleAni.pos(Laya.Browser.width / 2, Laya.Browser.height / 2);
+           this.roleAni.loadAtlas("res/atlas/girl.atlas", Laya.Handler.create(this, this.onLoaded));
+       }
+       onLoaded() {
+           console.log('this.roleAni', this.roleAni);
+           console.log(2222);
+           Laya.stage.addChild(this.roleAni);
+           this.roleAni.play();
        }
    }
 
@@ -334,7 +344,7 @@ var laya = (function (exports) {
        }
        onMapLoaded() {
            this.tMap.setViewPortPivotByScale(0, 0);
-           this.tMap.scale = 1;
+           this.tMap.scale = 2;
            Laya.stage.on(Laya.Event.RESIZE, this, this.resize);
            Laya.stage.on(Laya.Event.MOUSE_DOWN, this, this.mouseDown);
            Laya.stage.on(Laya.Event.MOUSE_UP, this, this.mouseUp);

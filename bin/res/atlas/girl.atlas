@@ -1,0 +1,110 @@
+{
+    "frames": {
+        "girl_01.png": {
+            "frame": {
+                "h": 28,
+                "idx": 0,
+                "w": 29,
+                "x": 0,
+                "y": 0
+            },
+            "sourceSize": {
+                "h": 30,
+                "w": 30
+            },
+            "spriteSourceSize": {
+                "x": 0,
+                "y": 1
+            }
+        },
+        "girl_02.png": {
+            "frame": {
+                "h": 29,
+                "idx": 0,
+                "w": 29,
+                "x": 0,
+                "y": 29
+            },
+            "sourceSize": {
+                "h": 30,
+                "w": 30
+            },
+            "spriteSourceSize": {
+                "x": 0,
+                "y": 0
+            }
+        },
+        "girl_03.png": {
+            "frame": {
+                "h": 26,
+                "idx": 0,
+                "w": 29,
+                "x": 30,
+                "y": 0
+            },
+            "sourceSize": {
+                "h": 30,
+                "w": 30
+            },
+            "spriteSourceSize": {
+                "x": 0,
+                "y": 2
+            }
+        },
+        "girl_04.png": {
+            "frame": {
+                "h": 28,
+                "idx": 0,
+                "w": 30,
+                "x": 60,
+                "y": 0
+            },
+            "sourceSize": {
+                "h": 30,
+                "w": 30
+            },
+            "spriteSourceSize": {
+                "x": 0,
+                "y": 1
+            }
+        },
+        "girl_05.png": {
+            "frame": {
+                "h": 29,
+                "idx": 0,
+                "w": 29,
+                "x": 30,
+                "y": 27
+            },
+            "sourceSize": {
+                "h": 30,
+                "w": 30
+            },
+            "spriteSourceSize": {
+                "x": 0,
+                "y": 0
+            }
+        },
+        "girl_06.png": {
+            "frame": {
+                "h": 26,
+                "idx": 0,
+                "w": 29,
+                "x": 60,
+                "y": 29
+            },
+            "sourceSize": {
+                "h": 30,
+                "w": 30
+            },
+            "spriteSourceSize": {
+                "x": 0,
+                "y": 2
+            }
+        }
+    },
+    "meta": {
+        "image": "girl.png",
+        "prefix": "girl/"
+    }
+}
