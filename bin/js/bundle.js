@@ -46,8 +46,8 @@ var laya = (function (exports) {
            DirectionWrapper.scene.pos(Laya.Browser.width - 70, Laya.Browser.height - 70);
            this.roleAni = new Laya.Animation();
            console.log(111);
-           this.roleAni.width = 32;
-           this.roleAni.height = 32;
+           this.roleAni.scaleX = 1.5;
+           this.roleAni.scaleY = 1.5;
            this.roleAni.pos(Laya.Browser.width / 2, Laya.Browser.height / 2);
            this.roleAni.loadAtlas("res/atlas/girl.atlas", Laya.Handler.create(this, this.onLoaded));
        }
@@ -302,7 +302,7 @@ var laya = (function (exports) {
            this.scaleValue = 0;
            this.MapX = 0;
            this.MapY = 0;
-           this.offsetUnit = 10;
+           this.offsetUnit = 50;
            this.mapOffset = -50;
            this.skin = "button.png";
            console.log('width ', Laya.Browser.width);
@@ -350,12 +350,38 @@ var laya = (function (exports) {
            Laya.stage.on(Laya.Event.MOUSE_UP, this, this.mouseUp);
            this.resize();
            console.log('tMap', this.tMap);
+           const idx = this.tMap.getLayerByIndex(1).getTileDataByScreenPos(1, 1);
+           const a = this.tMap.getSprite(1, 32, 32);
+           console.log('idx', idx);
+           console.log('a', a);
+           const l0 = this.tMap.getLayerByIndex(0);
+           const l1 = this.tMap.getLayerByIndex(1);
+           const l2 = this.tMap.getLayerByIndex(2);
+           const ll0 = this.tMap.getLayerByName('mbg');
+           const ll1 = this.tMap.getLayerByName('mobject');
+           const ll2 = this.tMap.getLayerByName('mimage');
+           console.log('l0 ', l0);
+           console.log('l1 ', l1);
+           console.log('l2 ', l2);
+           console.log('ll0 ', ll0);
+           console.log('ll1 ', ll1);
+           console.log('ll2 ', ll2);
+           const i0 = l0.getTileData(0, 0);
+           console.log('i0 ', i0);
+           const p0 = this.tMap.getTileProperties(0, i0 - 1, 'tree');
+           const p1 = this.tMap.getTileProperties(1, i0 - 1, 'tree');
+           const p2 = this.tMap.getTileProperties(2, i0 - 1, 'tree');
+           console.log('p0', p0);
+           console.log('p1', p1);
+           console.log('p2', p2);
+           const mapp = this.tMap.getMapProperties('mbg');
+           console.log('mapp', mapp);
+           const s0 = this.tMap.getSprite(0, 0, 0);
+           console.log('so ', s0);
        }
        mouseMove() {
            var moveX = this.MapX - (Laya.stage.mouseX - this.mLastMouseX);
            var moveY = this.MapY - (Laya.stage.mouseY - this.mLastMouseY);
-           console.log('moveX', moveX);
-           console.log('this.tMap.width', this.tMap.width);
            if (moveX < this.mapOffset
                || moveY < this.mapOffset
                || moveX > this.tMap.width - this.mapOffset - Laya.Browser.width
@@ -365,8 +391,6 @@ var laya = (function (exports) {
            this.tMap.moveViewPort(moveX, moveY);
        }
        mouseUp() {
-           console.log('up mLastMouseX', this.mLastMouseX);
-           console.log('up mLastMouseY', this.mLastMouseY);
            let _MapX = this.MapX - (Laya.stage.mouseX - this.mLastMouseX);
            let _MapY = this.MapY - (Laya.stage.mouseY - this.mLastMouseY);
            this.MapX = _MapX;
@@ -390,8 +414,6 @@ var laya = (function (exports) {
        mouseDown() {
            this.mLastMouseX = Laya.stage.mouseX;
            this.mLastMouseY = Laya.stage.mouseY;
-           console.log('down mLastMouseX', this.mLastMouseX);
-           console.log('down mLastMouseY', this.mLastMouseY);
            Laya.stage.on(Laya.Event.MOUSE_MOVE, this, this.mouseMove);
        }
        resize() {

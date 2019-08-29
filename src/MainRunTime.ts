@@ -17,8 +17,8 @@ export default class MainRunTime extends Laya.Scene {
         this.roleAni = new Laya.Animation();
         //加载动画图集，加载成功后执行回调方法
         console.log(111);
-        this.roleAni.width=32
-        this.roleAni.height=32
+        this.roleAni.scaleX=1.5
+        this.roleAni.scaleY=1.5
         this.roleAni.pos(Laya.Browser.width / 2, Laya.Browser.height / 2)
         
         this.roleAni.loadAtlas("res/atlas/girl.atlas", Laya.Handler.create(this, this.onLoaded));
