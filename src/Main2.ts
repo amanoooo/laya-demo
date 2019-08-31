@@ -10,8 +10,7 @@ class GameMain {
     private MapY: number = 0;
     private mLastMouseX: number;
     private mLastMouseY: number;
-    private offsetUnit = 50
-    private mapOffset = -50
+    private stepSize = 32
 
 
     //按钮资源路径
@@ -26,9 +25,7 @@ class GameMain {
 
     constructor() {
         //初始化舞台
-        console.log('width ', Laya.Browser.width);
-        console.log('height ', Laya.Browser.height);
-
+        console.log('width  %d , height %d', Laya.Browser.width, Laya.Browser.height);
 
         this.tMap = new Laya.TiledMap();
         var viewRect: Laya.Rectangle = new Laya.Rectangle();
@@ -61,7 +58,6 @@ class GameMain {
     onConfigLoaded(): void {
         //加载IDE指定的场景
         GameConfig.startScene && Laya.Scene.open(GameConfig.startScene);
-        this.resize2()
     }
     onVersionLoaded(): void {
         //激活大小图映射，加载小图的时候，如果发现小图在大图合集里面，则优先加载大图合集，而不是小图
@@ -72,8 +68,7 @@ class GameMain {
         this.tMap.setViewPortPivotByScale(0, 0);
         this.tMap.scale = 2;
         Laya.stage.on(Laya.Event.RESIZE, this, this.resize);
-        Laya.stage.on(Laya.Event.MOUSE_DOWN, this, this.mouseDown);
-        Laya.stage.on(Laya.Event.MOUSE_UP, this, this.mouseUp);
+
 
         this.resize();
         console.log('tMap', this.tMap)
@@ -119,50 +114,6 @@ class GameMain {
 
     }
 
-
-
-    /**
-     * 移动地图视口
-     */
-    private mouseMove(): void {
-        var moveX: number = this.MapX - (Laya.stage.mouseX - this.mLastMouseX);
-        var moveY: number = this.MapY - (Laya.stage.mouseY - this.mLastMouseY)
-        //移动地图视口
-
-        if (moveX < this.mapOffset
-            || moveY < this.mapOffset
-            || moveX > this.tMap.width - this.mapOffset - Laya.Browser.width
-            || moveY > this.tMap.height - this.mapOffset - Laya.Browser.height) {
-            return
-        }
-        this.tMap.moveViewPort(moveX, moveY);
-    }
-    private mouseUp(): void {
-
-        let _MapX = this.MapX - (Laya.stage.mouseX - this.mLastMouseX)
-        let _MapY = this.MapY - (Laya.stage.mouseY - this.mLastMouseY);
-        this.MapX = _MapX
-        this.MapY = _MapY
-
-        const maxOffsetX = this.tMap.width - this.mapOffset - Laya.Browser.width
-        const maxOffsetY = this.tMap.height - this.mapOffset - Laya.Browser.height
-        if (_MapX < this.mapOffset) {
-            this.MapX = this.mapOffset
-        } else if (_MapX > maxOffsetX) {
-            this.MapX = maxOffsetX
-        }
-        if (_MapY < this.mapOffset) {
-            this.MapY = this.mapOffset
-        } else if (_MapY > maxOffsetY) {
-            this.MapY = maxOffsetY
-        }
-        Laya.stage.off(Laya.Event.MOUSE_MOVE, this, this.mouseMove);
-    }
-    private mouseDown(): void {
-        this.mLastMouseX = Laya.stage.mouseX
-        this.mLastMouseY = Laya.stage.mouseY;
-        Laya.stage.on(Laya.Event.MOUSE_MOVE, this, this.mouseMove);
-    }
     /**
      *  改变视口大小
      *  重设地图视口区域
@@ -171,38 +122,49 @@ class GameMain {
         //改变视口大小
         this.tMap.changeViewPort(this.MapX, this.MapY, Laya.Browser.width, Laya.Browser.height);
     }
-    resize2(): void {
-        let w = GameConfig.width;
-        let h = GameConfig.height;
-        console.log('w ', w);
-        console.log('h ', h);
 
-        let screen_wh_scale = Laya.Browser.width / Laya.Browser.height;
-        h = GameConfig.width / screen_wh_scale;
-        Laya.Scene.unDestroyedScenes.forEach(element => {
-            let s = element as Laya.Scene;
-            s.width = w;
-            s.height = h;
-        });
+    getCoordinate(x: number, y: number): {indexX: number, indexY: number} {
+       const indexX= x/ this.stepSize
+       const indexY =y/this.stepSize
+       console.log('indeX ', indexX);
+       console.log('indeY', indexY);
+       return {
+        indexX,
+        indexY
+       }
+       
+       
     }
-
     move(direction: string): void {
+        
+   
+
+        let newMapX = this.MapX
+        let newMapY = this.MapY
+        
         switch (direction) {
             case 'left':
-                this.MapX = this.MapX - this.offsetUnit
-                break;
+            newMapX = this.MapX - this.stepSize
+            
+            break;
             case 'right':
-                this.MapX = this.MapX + this.offsetUnit
-                break;
+            newMapX = this.MapX + this.stepSize
+            break;
             case 'up':
-                this.MapY = this.MapY - this.offsetUnit
-                break;
+            newMapY = this.MapY - this.stepSize
+            break;
             case 'down':
-                this.MapY = this.MapY + this.offsetUnit
-                break;
+            newMapY = this.MapY + this.stepSize
+            break;
             default:
-                break;
+            break;
         }
+        console.log('mapx %d mapy %d ', this.MapX, this.MapY, this.tMap);
+        
+        console.log('getCoordinate', this.getCoordinate(newMapX, newMapY))
+
+        this.MapX = newMapX
+        this.MapY = newMapY
         this.tMap.moveViewPort(this.MapX, this.MapY);
         // this.tMap.setViewPortPivotByScale(0,0)
         // this.tMap.scale = 5;

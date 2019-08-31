@@ -302,11 +302,9 @@ var laya = (function (exports) {
            this.scaleValue = 0;
            this.MapX = 0;
            this.MapY = 0;
-           this.offsetUnit = 50;
-           this.mapOffset = -50;
+           this.stepSize = 32;
            this.skin = "button.png";
-           console.log('width ', Laya.Browser.width);
-           console.log('height ', Laya.Browser.height);
+           console.log('width  %d , height %d', Laya.Browser.width, Laya.Browser.height);
            this.tMap = new Laya.TiledMap();
            var viewRect = new Laya.Rectangle();
            this.tMap.createMap("res/demo4.json", viewRect, Laya.Handler.create(this, this.onMapLoaded));
@@ -337,7 +335,6 @@ var laya = (function (exports) {
        }
        onConfigLoaded() {
            GameConfig.startScene && Laya.Scene.open(GameConfig.startScene);
-           this.resize2();
        }
        onVersionLoaded() {
            Laya.AtlasInfoManager.enable("fileconfig.json", Laya.Handler.create(this, this.onConfigLoaded));
@@ -346,8 +343,6 @@ var laya = (function (exports) {
            this.tMap.setViewPortPivotByScale(0, 0);
            this.tMap.scale = 2;
            Laya.stage.on(Laya.Event.RESIZE, this, this.resize);
-           Laya.stage.on(Laya.Event.MOUSE_DOWN, this, this.mouseDown);
-           Laya.stage.on(Laya.Event.MOUSE_UP, this, this.mouseUp);
            this.resize();
            console.log('tMap', this.tMap);
            const idx = this.tMap.getLayerByIndex(0).getTileDataByScreenPos(1, 1);
@@ -377,43 +372,6 @@ var laya = (function (exports) {
            const s0 = this.tMap.getSprite(0, 0, 0);
            console.log('so ', s0);
        }
-       mouseMove() {
-           var moveX = this.MapX - (Laya.stage.mouseX - this.mLastMouseX);
-           var moveY = this.MapY - (Laya.stage.mouseY - this.mLastMouseY);
-           if (moveX < this.mapOffset
-               || moveY < this.mapOffset
-               || moveX > this.tMap.width - this.mapOffset - Laya.Browser.width
-               || moveY > this.tMap.height - this.mapOffset - Laya.Browser.height) {
-               return;
-           }
-           this.tMap.moveViewPort(moveX, moveY);
-       }
-       mouseUp() {
-           let _MapX = this.MapX - (Laya.stage.mouseX - this.mLastMouseX);
-           let _MapY = this.MapY - (Laya.stage.mouseY - this.mLastMouseY);
-           this.MapX = _MapX;
-           this.MapY = _MapY;
-           const maxOffsetX = this.tMap.width - this.mapOffset - Laya.Browser.width;
-           const maxOffsetY = this.tMap.height - this.mapOffset - Laya.Browser.height;
-           if (_MapX < this.mapOffset) {
-               this.MapX = this.mapOffset;
-           }
-           else if (_MapX > maxOffsetX) {
-               this.MapX = maxOffsetX;
-           }
-           if (_MapY < this.mapOffset) {
-               this.MapY = this.mapOffset;
-           }
-           else if (_MapY > maxOffsetY) {
-               this.MapY = maxOffsetY;
-           }
-           Laya.stage.off(Laya.Event.MOUSE_MOVE, this, this.mouseMove);
-       }
-       mouseDown() {
-           this.mLastMouseX = Laya.stage.mouseX;
-           this.mLastMouseY = Laya.stage.mouseY;
-           Laya.stage.on(Laya.Event.MOUSE_MOVE, this, this.mouseMove);
-       }
        resize() {
            this.tMap.changeViewPort(this.MapX, this.MapY, Laya.Browser.width, Laya.Browser.height);
        }
@@ -430,26 +388,40 @@ var laya = (function (exports) {
                s.height = h;
            });
        }
+       getCoordinate(x, y) {
+           const indexX = x / this.stepSize;
+           const indexY = y / this.stepSize;
+           console.log('indeX ', indexX);
+           console.log('indeY', indexY);
+           return {
+               indexX,
+               indexY
+           };
+       }
        move(direction) {
+           let newMapX = this.MapX;
+           let newMapY = this.MapY;
            switch (direction) {
                case 'left':
-                   this.MapX = this.MapX - this.offsetUnit;
+                   newMapX = this.MapX - this.stepSize;
                    break;
                case 'right':
-                   this.MapX = this.MapX + this.offsetUnit;
+                   newMapX = this.MapX + this.stepSize;
                    break;
                case 'up':
-                   this.MapY = this.MapY - this.offsetUnit;
+                   newMapY = this.MapY - this.stepSize;
                    break;
                case 'down':
-                   this.MapY = this.MapY + this.offsetUnit;
+                   newMapY = this.MapY + this.stepSize;
                    break;
                default:
                    break;
            }
-           this.tMap.setViewPortPivotByScale(0, 0);
-           this.tMap.scale = 5;
-           this.resize();
+           console.log('mapx %d mapy %d ', this.MapX, this.MapY, this.tMap);
+           console.log('getCoordinate', this.getCoordinate(newMapX, newMapY));
+           this.MapX = newMapX;
+           this.MapY = newMapY;
+           this.tMap.moveViewPort(this.MapX, this.MapY);
        }
    }
    const game = new GameMain();
