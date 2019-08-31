@@ -2,15 +2,22 @@ import GameConfig from "./GameConfig";
 import Http, { MResponse } from "./Http";
 
 
+const { Tween, Ease, Handler } = Laya
+
 // 程序入口
 class GameMain {
     private tMap: Laya.TiledMap;
     private scaleValue: number = 0;
-    private MapX: number = 0;
-    private MapY: number = 0;
+
     private mLastMouseX: number;
     private mLastMouseY: number;
     private stepSize = 32
+    private patchX: number = 0 // index
+    private patchY: number = 0 // index
+    private roleX: number = 0 // index
+    private roleY: number = 0 // index
+    private newRoleX: number = 0 // index
+    private newRoleY: number = 0 // index
 
 
     //按钮资源路径
@@ -25,14 +32,20 @@ class GameMain {
 
     constructor() {
         //初始化舞台
-        console.log('width  %d , height %d', Laya.Browser.width, Laya.Browser.height);
+
+        const bWidth = Laya.Browser.width
+        const bHeight = Laya.Browser.height
+        console.log('width  %d , height %d', bWidth, bHeight);
 
         this.tMap = new Laya.TiledMap();
         var viewRect: Laya.Rectangle = new Laya.Rectangle();
         this.tMap.createMap("res/demo4.json", viewRect, Laya.Handler.create(this, this.onMapLoaded));
 
-        Laya.init(Laya.Browser.width, Laya.Browser.height, Laya.WebGL);
-        // Laya.init(GameConfig.width, GameConfig.height, Laya["WebGL"]);
+        Laya.init(bWidth, bHeight, Laya.WebGL);
+
+        this.patchX = - Math.round(bWidth / 2 / this.stepSize)
+        this.patchY = - Math.round(bHeight / 2 / this.stepSize)
+
         Laya.stage.bgColor = "#5a7b9a";
         Laya["Physics"] && Laya["Physics"].enable();
         Laya["DebugPanel"] && Laya["DebugPanel"].enable();
@@ -66,7 +79,7 @@ class GameMain {
     private onMapLoaded(): void {
         //设置缩放中心点为视口的左上角
         this.tMap.setViewPortPivotByScale(0, 0);
-        this.tMap.scale = 2;
+        this.tMap.scale = 1;
         Laya.stage.on(Laya.Event.RESIZE, this, this.resize);
 
 
@@ -110,9 +123,8 @@ class GameMain {
         console.log('so ', s0);
 
 
-
-
     }
+
 
     /**
      *  改变视口大小
@@ -120,55 +132,62 @@ class GameMain {
      */
     private resize(): void {
         //改变视口大小
-        this.tMap.changeViewPort(this.MapX, this.MapY, Laya.Browser.width, Laya.Browser.height);
+
+        console.log('tmap ', this.tMap.viewPortX);
+        console.log('tmap ', this.tMap.viewPortY);
+
+        const { roleX, roleY, newRoleX, newRoleY } = this
+        Tween.to(this,
+            { roleX: newRoleX, roleY: newRoleY, ease: Ease.backOut, complete: Handler.create(this, this.onTweenComplete), update: new Handler(this, this.onTweenUpdate, [this.roleX]) }
+            , 1000)
+
+        // this.tMap.changeViewPort(0, 0, Laya.Browser.width, Laya.Browser.height);
+    }
+    onTweenComplete(x, y, z) {
+        console.log('onTweenComplete', x, y, z);
+    }
+    onTweenUpdate(x, y, z) {
+        console.log('onTweenUpdate', x, y, z);
+        const mapX = (this.roleX + this.patchX) * this.stepSize
+        const mapY = (this.roleY + this.patchY) * this.stepSize
+
+        this.tMap.changeViewPort(mapX, mapY, Laya.Browser.width, Laya.Browser.height);
+
+
     }
 
-    getCoordinate(x: number, y: number): {indexX: number, indexY: number} {
-       const indexX= x/ this.stepSize
-       const indexY =y/this.stepSize
-       console.log('indeX ', indexX);
-       console.log('indeY', indexY);
-       return {
-        indexX,
-        indexY
-       }
-       
-       
+    getCoordinate(x: number, y: number): { indexX: number, indexY: number } {
+        const indexX = x / this.stepSize
+        const indexY = y / this.stepSize
+        console.log('indeX ', indexX);
+        console.log('indeY', indexY);
+        return {
+            indexX,
+            indexY
+        }
     }
     move(direction: string): void {
-        
-   
+        this.newRoleX = this.roleX
+        this.newRoleY = this.roleY
 
-        let newMapX = this.MapX
-        let newMapY = this.MapY
-        
         switch (direction) {
             case 'left':
-            newMapX = this.MapX - this.stepSize
-            
-            break;
+                this.newRoleX = this.roleX - 1
+                break;
             case 'right':
-            newMapX = this.MapX + this.stepSize
-            break;
+                this.newRoleX = this.roleX + 1
+                break;
             case 'up':
-            newMapY = this.MapY - this.stepSize
-            break;
+                this.newRoleY = this.roleY - 1
+                break;
             case 'down':
-            newMapY = this.MapY + this.stepSize
-            break;
+                this.newRoleY = this.roleY + 1
+                break;
             default:
-            break;
+                break;
         }
-        console.log('mapx %d mapy %d ', this.MapX, this.MapY, this.tMap);
-        
-        console.log('getCoordinate', this.getCoordinate(newMapX, newMapY))
-
-        this.MapX = newMapX
-        this.MapY = newMapY
-        this.tMap.moveViewPort(this.MapX, this.MapY);
-        // this.tMap.setViewPortPivotByScale(0,0)
-        // this.tMap.scale = 5;
-        // this.resize();
+        console.log('roleX %d roleY %d ', this.roleX, this.roleY, this.tMap);
+        this.resize()
     }
 }
 

@@ -46,14 +46,15 @@ var laya = (function (exports) {
            DirectionWrapper.scene.pos(Laya.Browser.width - 70, Laya.Browser.height - 70);
            this.roleAni = new Laya.Animation();
            console.log(111);
-           this.roleAni.scaleX = 1.5;
-           this.roleAni.scaleY = 1.5;
-           this.roleAni.pos(Laya.Browser.width / 2, Laya.Browser.height / 2);
+           this.roleAni.scaleX = 1;
+           this.roleAni.scaleY = 1;
+           const patchX = Math.round(Laya.Browser.width / 2 / 32) * 32;
+           const patchY = Math.round(Laya.Browser.height / 2 / 32) * 32;
+           this.roleAni.pos(patchX, patchY);
            this.roleAni.loadAtlas("res/atlas/girl.atlas", Laya.Handler.create(this, this.onLoaded));
        }
        onLoaded() {
            console.log('this.roleAni', this.roleAni);
-           console.log(2222);
            Laya.stage.addChild(this.roleAni);
            this.roleAni.play();
        }
@@ -297,18 +298,27 @@ var laya = (function (exports) {
    }
    var Http = new HTTP();
 
+   const { Tween, Ease, Handler } = Laya;
    class GameMain {
        constructor() {
            this.scaleValue = 0;
-           this.MapX = 0;
-           this.MapY = 0;
            this.stepSize = 32;
+           this.patchX = 0;
+           this.patchY = 0;
+           this.roleX = 0;
+           this.roleY = 0;
+           this.newRoleX = 0;
+           this.newRoleY = 0;
            this.skin = "button.png";
-           console.log('width  %d , height %d', Laya.Browser.width, Laya.Browser.height);
+           const bWidth = Laya.Browser.width;
+           const bHeight = Laya.Browser.height;
+           console.log('width  %d , height %d', bWidth, bHeight);
            this.tMap = new Laya.TiledMap();
            var viewRect = new Laya.Rectangle();
            this.tMap.createMap("res/demo4.json", viewRect, Laya.Handler.create(this, this.onMapLoaded));
-           Laya.init(Laya.Browser.width, Laya.Browser.height, Laya.WebGL);
+           Laya.init(bWidth, bHeight, Laya.WebGL);
+           this.patchX = -Math.round(bWidth / 2 / this.stepSize);
+           this.patchY = -Math.round(bHeight / 2 / this.stepSize);
            Laya.stage.bgColor = "#5a7b9a";
            Laya["Physics"] && Laya["Physics"].enable();
            Laya["DebugPanel"] && Laya["DebugPanel"].enable();
@@ -341,7 +351,7 @@ var laya = (function (exports) {
        }
        onMapLoaded() {
            this.tMap.setViewPortPivotByScale(0, 0);
-           this.tMap.scale = 2;
+           this.tMap.scale = 1;
            Laya.stage.on(Laya.Event.RESIZE, this, this.resize);
            this.resize();
            console.log('tMap', this.tMap);
@@ -373,20 +383,19 @@ var laya = (function (exports) {
            console.log('so ', s0);
        }
        resize() {
-           this.tMap.changeViewPort(this.MapX, this.MapY, Laya.Browser.width, Laya.Browser.height);
+           console.log('tmap ', this.tMap.viewPortX);
+           console.log('tmap ', this.tMap.viewPortY);
+           const { roleX, roleY, newRoleX, newRoleY } = this;
+           Tween.to(this, { roleX: newRoleX, roleY: newRoleY, ease: Ease.backOut, complete: Handler.create(this, this.onTweenComplete), update: new Handler(this, this.onTweenUpdate, [this.roleX]) }, 1000);
        }
-       resize2() {
-           let w = GameConfig.width;
-           let h = GameConfig.height;
-           console.log('w ', w);
-           console.log('h ', h);
-           let screen_wh_scale = Laya.Browser.width / Laya.Browser.height;
-           h = GameConfig.width / screen_wh_scale;
-           Laya.Scene.unDestroyedScenes.forEach(element => {
-               let s = element;
-               s.width = w;
-               s.height = h;
-           });
+       onTweenComplete(x, y, z) {
+           console.log('onTweenComplete', x, y, z);
+       }
+       onTweenUpdate(x, y, z) {
+           console.log('onTweenUpdate', x, y, z);
+           const mapX = (this.roleX + this.patchX) * this.stepSize;
+           const mapY = (this.roleY + this.patchY) * this.stepSize;
+           this.tMap.changeViewPort(mapX, mapY, Laya.Browser.width, Laya.Browser.height);
        }
        getCoordinate(x, y) {
            const indexX = x / this.stepSize;
@@ -399,29 +408,26 @@ var laya = (function (exports) {
            };
        }
        move(direction) {
-           let newMapX = this.MapX;
-           let newMapY = this.MapY;
+           this.newRoleX = this.roleX;
+           this.newRoleY = this.roleY;
            switch (direction) {
                case 'left':
-                   newMapX = this.MapX - this.stepSize;
+                   this.newRoleX = this.roleX - 1;
                    break;
                case 'right':
-                   newMapX = this.MapX + this.stepSize;
+                   this.newRoleX = this.roleX + 1;
                    break;
                case 'up':
-                   newMapY = this.MapY - this.stepSize;
+                   this.newRoleY = this.roleY - 1;
                    break;
                case 'down':
-                   newMapY = this.MapY + this.stepSize;
+                   this.newRoleY = this.roleY + 1;
                    break;
                default:
                    break;
            }
-           console.log('mapx %d mapy %d ', this.MapX, this.MapY, this.tMap);
-           console.log('getCoordinate', this.getCoordinate(newMapX, newMapY));
-           this.MapX = newMapX;
-           this.MapY = newMapY;
-           this.tMap.moveViewPort(this.MapX, this.MapY);
+           console.log('roleX %d roleY %d ', this.roleX, this.roleY, this.tMap);
+           this.resize();
        }
    }
    const game = new GameMain();
