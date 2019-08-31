@@ -309,7 +309,7 @@ var laya = (function (exports) {
            console.log('height ', Laya.Browser.height);
            this.tMap = new Laya.TiledMap();
            var viewRect = new Laya.Rectangle();
-           this.tMap.createMap("res/demo1.json", viewRect, Laya.Handler.create(this, this.onMapLoaded));
+           this.tMap.createMap("res/demo4.json", viewRect, Laya.Handler.create(this, this.onMapLoaded));
            Laya.init(Laya.Browser.width, Laya.Browser.height, Laya.WebGL);
            Laya.stage.bgColor = "#5a7b9a";
            Laya["Physics"] && Laya["Physics"].enable();
@@ -350,32 +350,30 @@ var laya = (function (exports) {
            Laya.stage.on(Laya.Event.MOUSE_UP, this, this.mouseUp);
            this.resize();
            console.log('tMap', this.tMap);
-           const idx = this.tMap.getLayerByIndex(1).getTileDataByScreenPos(1, 1);
+           const idx = this.tMap.getLayerByIndex(0).getTileDataByScreenPos(1, 1);
            const a = this.tMap.getSprite(1, 32, 32);
            console.log('idx', idx);
            console.log('a', a);
-           const l0 = this.tMap.getLayerByIndex(0);
-           const l1 = this.tMap.getLayerByIndex(1);
-           const l2 = this.tMap.getLayerByIndex(2);
-           const ll0 = this.tMap.getLayerByName('mbg');
-           const ll1 = this.tMap.getLayerByName('mobject');
-           const ll2 = this.tMap.getLayerByName('mimage');
-           console.log('l0 ', l0);
-           console.log('l1 ', l1);
-           console.log('l2 ', l2);
-           console.log('ll0 ', ll0);
-           console.log('ll1 ', ll1);
-           console.log('ll2 ', ll2);
-           const i0 = l0.getTileData(0, 0);
-           console.log('i0 ', i0);
-           const p0 = this.tMap.getTileProperties(0, i0 - 1, 'tree');
-           const p1 = this.tMap.getTileProperties(1, i0 - 1, 'tree');
-           const p2 = this.tMap.getTileProperties(2, i0 - 1, 'tree');
+           const layer = this.tMap.getLayerByIndex(0);
+           console.log('layer ', layer);
+           const tileData = layer.getTileData(0, 0);
+           const tileData2 = layer.getTileData(1, 0);
+           const tileData3 = layer.getTileData(0, 1);
+           const tileData4 = layer.getTileData(1, 1);
+           const tileData5 = layer.getTileData(0, 2);
+           const tileData6 = layer.getTileData(1, 2);
+           console.log('tileData ', tileData);
+           console.log('tileData ', tileData2);
+           console.log('tileData ', tileData3);
+           console.log('tileData ', tileData4);
+           console.log('tileData ', tileData5);
+           console.log('tileData ', tileData6);
+           const p0 = this.tMap.getTileProperties(0, tileData - 1, 'mp');
+           const p1 = this.tMap.getTileProperties(0, tileData, 'mp');
+           const p2 = this.tMap.getTileProperties(0, tileData + 1, 'mp');
            console.log('p0', p0);
            console.log('p1', p1);
            console.log('p2', p2);
-           const mapp = this.tMap.getMapProperties('mbg');
-           console.log('mapp', mapp);
            const s0 = this.tMap.getSprite(0, 0, 0);
            console.log('so ', s0);
        }
@@ -449,7 +447,9 @@ var laya = (function (exports) {
                default:
                    break;
            }
-           this.tMap.moveViewPort(this.MapX, this.MapY);
+           this.tMap.setViewPortPivotByScale(0, 0);
+           this.tMap.scale = 5;
+           this.resize();
        }
    }
    const game = new GameMain();
