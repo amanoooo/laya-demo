@@ -19,6 +19,22 @@ class GameMain {
     private newRoleX: number = 0 // index
     private newRoleY: number = 0 // index
 
+    private mLock: boolean = false
+    private mHold: boolean = false
+
+    private hold() {
+        this.mHold = true
+    }
+    private unHold() {
+        this.mHold = false
+    }
+    private lock() {
+        this.mLock = true
+    }
+    private unLock() {
+        this.mLock = false
+    }
+
 
     //按钮资源路径
     private skin: string = "button.png";
@@ -82,47 +98,14 @@ class GameMain {
         this.tMap.scale = 1;
         Laya.stage.on(Laya.Event.RESIZE, this, this.resize);
 
-
         this.resize();
         console.log('tMap', this.tMap)
-
-
-        const idx = this.tMap.getLayerByIndex(0).getTileDataByScreenPos(1, 1);
         const a = this.tMap.getSprite(1, 32, 32)
-
-        console.log('idx', idx);
-
         console.log('a', a);
         const layer = this.tMap.getLayerByIndex(0)
-
         console.log('layer ', layer);
-
-        const tileData = layer.getTileData(0, 0)
-        const tileData2 = layer.getTileData(1, 0)
-        const tileData3 = layer.getTileData(0, 1)
-        const tileData4 = layer.getTileData(1, 1)
-        const tileData5 = layer.getTileData(0, 2)
-        const tileData6 = layer.getTileData(1, 2)
-        console.log('tileData ', tileData);
-        console.log('tileData ', tileData2);
-        console.log('tileData ', tileData3);
-        console.log('tileData ', tileData4);
-        console.log('tileData ', tileData5);
-        console.log('tileData ', tileData6);
-
-        const p0 = this.tMap.getTileProperties(0, tileData - 1, 'mp')
-        const p1 = this.tMap.getTileProperties(0, tileData, 'mp')
-        const p2 = this.tMap.getTileProperties(0, tileData + 1, 'mp')
-        console.log('p0', p0);
-        console.log('p1', p1);
-        console.log('p2', p2);
-
-
-
         const s0 = this.tMap.getSprite(0, 0, 0)
         console.log('so ', s0);
-
-
     }
 
 
@@ -130,30 +113,38 @@ class GameMain {
      *  改变视口大小
      *  重设地图视口区域
      */
-    private resize(): void {
-        //改变视口大小
-
-        console.log('tmap ', this.tMap.viewPortX);
-        console.log('tmap ', this.tMap.viewPortY);
-
+    private resize(direction?: string): void {
         const { roleX, roleY, newRoleX, newRoleY } = this
-        Tween.to(this,
-            { roleX: newRoleX, roleY: newRoleY, ease: Ease.backOut, complete: Handler.create(this, this.onTweenComplete), update: new Handler(this, this.onTweenUpdate, [this.roleX]) }
-            , 1000)
+        console.log('old role', roleX, roleY);
 
-        // this.tMap.changeViewPort(0, 0, Laya.Browser.width, Laya.Browser.height);
+        if (roleX === newRoleX && roleY === newRoleY) {
+            const mapX = (this.roleX + this.patchX) * this.stepSize
+            const mapY = (this.roleY + this.patchY) * this.stepSize
+            this.tMap.changeViewPort(mapX, mapY, Laya.Browser.width, Laya.Browser.height);
+            return
+        }
+
+        Tween.to(this,
+            { roleX: newRoleX, roleY: newRoleY, ease: Ease.linearNone, complete: Handler.create(this, this.onTweenComplete, [direction]), update: new Handler(this, this.onTweenUpdate, [this.roleX]) }
+            , 500)
+
     }
-    onTweenComplete(x, y, z) {
-        console.log('onTweenComplete', x, y, z);
-    }
-    onTweenUpdate(x, y, z) {
-        console.log('onTweenUpdate', x, y, z);
+    onTweenComplete(direction: string) {
+        console.log('onTweenComplete', this.roleX, this.roleX, );
         const mapX = (this.roleX + this.patchX) * this.stepSize
         const mapY = (this.roleY + this.patchY) * this.stepSize
-
         this.tMap.changeViewPort(mapX, mapY, Laya.Browser.width, Laya.Browser.height);
+        console.log('this mHold is ', this.mHold);
 
-
+        this.unLock()
+        if (this.mHold) {
+            this.move(direction)
+        }
+    }
+    onTweenUpdate() {
+        const mapX = (this.roleX + this.patchX) * this.stepSize
+        const mapY = (this.roleY + this.patchY) * this.stepSize
+        this.tMap.changeViewPort(mapX, mapY, Laya.Browser.width, Laya.Browser.height);
     }
 
     getCoordinate(x: number, y: number): { indexX: number, indexY: number } {
@@ -166,7 +157,17 @@ class GameMain {
             indexY
         }
     }
+    cancelMove(): void {
+        this.unHold()
+    }
     move(direction: string): void {
+        console.log('mlock is', this.mLock);
+
+        if (this.mLock) {
+            return
+        }
+        this.hold()
+        this.lock()
         this.newRoleX = this.roleX
         this.newRoleY = this.roleY
 
@@ -186,8 +187,18 @@ class GameMain {
             default:
                 break;
         }
-        console.log('roleX %d roleY %d ', this.roleX, this.roleY, this.tMap);
-        this.resize()
+
+        const tileData = this.tMap.getLayerByIndex(0).getTileData(this.newRoleX, this.newRoleY)
+
+        if (tileData === 1) {
+            console.log('return due to (%d, %d) data is 1', this.newRoleX, this.newRoleY, tileData)
+            this.unHold()
+            this.unLock()
+            return
+        }
+
+
+        this.resize(direction)
     }
 }
 

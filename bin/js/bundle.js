@@ -8,10 +8,13 @@ var laya = (function (exports) {
            this.on(Laya.Event.MOUSE_DOWN, this, this.scaleSmall);
            this.on(Laya.Event.MOUSE_UP, this, this.scaleBig);
            this.on(Laya.Event.MOUSE_OUT, this, this.scaleBig);
+           Laya.stage.on(Laya.Event.KEY_DOWN, this, this.onKeyDown);
+           Laya.stage.on(Laya.Event.KEY_UP, this, this.onkeyUp);
        }
        scaleBig(e) {
            e.stopPropagation();
            Laya.Tween.to(this, { scaleX: 1, scaleY: 1 }, this.scaleTime);
+           game.cancelMove();
        }
        scaleSmall(e) {
            e.stopPropagation();
@@ -34,6 +37,30 @@ var laya = (function (exports) {
                default:
                    throw new Error('invalid name');
            }
+       }
+       onKeyDown(e) {
+           switch (e.keyCode) {
+               case 37: {
+                   game.move('left');
+                   break;
+               }
+               case 38: {
+                   game.move('up');
+                   break;
+               }
+               case 39: {
+                   game.move('right');
+                   break;
+               }
+               case 40: {
+                   game.move('down');
+                   break;
+               }
+               default: break;
+           }
+       }
+       onkeyUp(e) {
+           game.cancelMove();
        }
    }
 
@@ -309,6 +336,8 @@ var laya = (function (exports) {
            this.roleY = 0;
            this.newRoleX = 0;
            this.newRoleY = 0;
+           this.mLock = false;
+           this.mHold = false;
            this.skin = "button.png";
            const bWidth = Laya.Browser.width;
            const bHeight = Laya.Browser.height;
@@ -337,6 +366,18 @@ var laya = (function (exports) {
            Laya.ResourceVersion.enable("version.json", Laya.Handler.create(this, this.onVersionLoaded), Laya.ResourceVersion.FILENAME_VERSION);
            this.test();
        }
+       hold() {
+           this.mHold = true;
+       }
+       unHold() {
+           this.mHold = false;
+       }
+       lock() {
+           this.mLock = true;
+       }
+       unLock() {
+           this.mLock = false;
+       }
        test() {
            Http.get('http://localhost:3000/api/pos', { x: 1, y: 2 }, this, this.onTestSuccess);
        }
@@ -355,44 +396,36 @@ var laya = (function (exports) {
            Laya.stage.on(Laya.Event.RESIZE, this, this.resize);
            this.resize();
            console.log('tMap', this.tMap);
-           const idx = this.tMap.getLayerByIndex(0).getTileDataByScreenPos(1, 1);
            const a = this.tMap.getSprite(1, 32, 32);
-           console.log('idx', idx);
            console.log('a', a);
            const layer = this.tMap.getLayerByIndex(0);
            console.log('layer ', layer);
-           const tileData = layer.getTileData(0, 0);
-           const tileData2 = layer.getTileData(1, 0);
-           const tileData3 = layer.getTileData(0, 1);
-           const tileData4 = layer.getTileData(1, 1);
-           const tileData5 = layer.getTileData(0, 2);
-           const tileData6 = layer.getTileData(1, 2);
-           console.log('tileData ', tileData);
-           console.log('tileData ', tileData2);
-           console.log('tileData ', tileData3);
-           console.log('tileData ', tileData4);
-           console.log('tileData ', tileData5);
-           console.log('tileData ', tileData6);
-           const p0 = this.tMap.getTileProperties(0, tileData - 1, 'mp');
-           const p1 = this.tMap.getTileProperties(0, tileData, 'mp');
-           const p2 = this.tMap.getTileProperties(0, tileData + 1, 'mp');
-           console.log('p0', p0);
-           console.log('p1', p1);
-           console.log('p2', p2);
            const s0 = this.tMap.getSprite(0, 0, 0);
            console.log('so ', s0);
        }
-       resize() {
-           console.log('tmap ', this.tMap.viewPortX);
-           console.log('tmap ', this.tMap.viewPortY);
+       resize(direction) {
            const { roleX, roleY, newRoleX, newRoleY } = this;
-           Tween.to(this, { roleX: newRoleX, roleY: newRoleY, ease: Ease.backOut, complete: Handler.create(this, this.onTweenComplete), update: new Handler(this, this.onTweenUpdate, [this.roleX]) }, 1000);
+           console.log('old role', roleX, roleY);
+           if (roleX === newRoleX && roleY === newRoleY) {
+               const mapX = (this.roleX + this.patchX) * this.stepSize;
+               const mapY = (this.roleY + this.patchY) * this.stepSize;
+               this.tMap.changeViewPort(mapX, mapY, Laya.Browser.width, Laya.Browser.height);
+               return;
+           }
+           Tween.to(this, { roleX: newRoleX, roleY: newRoleY, ease: Ease.linearNone, complete: Handler.create(this, this.onTweenComplete, [direction]), update: new Handler(this, this.onTweenUpdate, [this.roleX]) }, 500);
        }
-       onTweenComplete(x, y, z) {
-           console.log('onTweenComplete', x, y, z);
+       onTweenComplete(direction) {
+           console.log('onTweenComplete', this.roleX, this.roleX);
+           const mapX = (this.roleX + this.patchX) * this.stepSize;
+           const mapY = (this.roleY + this.patchY) * this.stepSize;
+           this.tMap.changeViewPort(mapX, mapY, Laya.Browser.width, Laya.Browser.height);
+           console.log('this mHold is ', this.mHold);
+           this.unLock();
+           if (this.mHold) {
+               this.move(direction);
+           }
        }
-       onTweenUpdate(x, y, z) {
-           console.log('onTweenUpdate', x, y, z);
+       onTweenUpdate() {
            const mapX = (this.roleX + this.patchX) * this.stepSize;
            const mapY = (this.roleY + this.patchY) * this.stepSize;
            this.tMap.changeViewPort(mapX, mapY, Laya.Browser.width, Laya.Browser.height);
@@ -407,7 +440,16 @@ var laya = (function (exports) {
                indexY
            };
        }
+       cancelMove() {
+           this.unHold();
+       }
        move(direction) {
+           console.log('mlock is', this.mLock);
+           if (this.mLock) {
+               return;
+           }
+           this.hold();
+           this.lock();
            this.newRoleX = this.roleX;
            this.newRoleY = this.roleY;
            switch (direction) {
@@ -426,8 +468,14 @@ var laya = (function (exports) {
                default:
                    break;
            }
-           console.log('roleX %d roleY %d ', this.roleX, this.roleY, this.tMap);
-           this.resize();
+           const tileData = this.tMap.getLayerByIndex(0).getTileData(this.newRoleX, this.newRoleY);
+           if (tileData === 1) {
+               console.log('return due to (%d, %d) data is 1', this.newRoleX, this.newRoleY, tileData);
+               this.unHold();
+               this.unLock();
+               return;
+           }
+           this.resize(direction);
        }
    }
    const game = new GameMain();

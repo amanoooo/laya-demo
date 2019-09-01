@@ -24,6 +24,8 @@ export default class MainRunTime extends Laya.Scene {
 
         this.roleAni.pos(patchX, patchY)
         this.roleAni.loadAtlas("res/atlas/girl.atlas", Laya.Handler.create(this, this.onLoaded));
+
+
     }
 
     private onLoaded(): void {
@@ -32,4 +34,5 @@ export default class MainRunTime extends Laya.Scene {
         Laya.stage.addChild(this.roleAni);
         this.roleAni.play()
     }
+
 }
