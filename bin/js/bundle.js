@@ -326,6 +326,45 @@ var laya = (function (exports) {
    }
    var Http = new HTTP();
 
+   function isType1(pos) {
+       if (pos.x) {
+           return true;
+       }
+       return false;
+   }
+   function randomSymbol() {
+       return Math.random() >= 0.5 ? 1 : -1;
+   }
+   function randomMonster(x, y, range = 10) {
+       return { x: x + Math.round(Math.random() * range) * randomSymbol(), y: y + Math.round(Math.random() * range) * randomSymbol() };
+   }
+   function randomNumber() {
+       return Math.round(Math.random() * 5);
+   }
+   class Monster {
+       constructor() {
+           this.x = 0;
+           this.y = 0;
+           this.longitude = 0;
+           this.latitude = 0;
+       }
+       fetchMonster(pos) {
+           if (isType1(pos)) {
+               this.x = pos.x;
+               this.y = pos.y;
+           }
+           else {
+               this.longitude = pos.longitude;
+               this.latitude = pos.latitude;
+           }
+           Http.get('http://localhost:3000/api/pos', { latitude: this.latitude, longitude: this.longitude }, this, this.onFetchMonster);
+       }
+       onFetchMonster(res) {
+           const monsterArr = new Array(randomNumber()).fill(1).map(() => randomMonster(this.x, this.y));
+           console.log('monsterArr', monsterArr);
+       }
+   }
+
    const { Tween, Ease, Handler } = Laya;
    const SIDE_LENGTH = 49;
    const FIRST_POS = 49;
@@ -347,6 +386,7 @@ var laya = (function (exports) {
            this.mHold = false;
            this.mapRow = 0;
            this.mapColumn = 0;
+           this.monster = new Monster();
            this.skin = "button.png";
            const bWidth = Laya.Browser.width;
            const bHeight = Laya.Browser.height;
@@ -373,7 +413,6 @@ var laya = (function (exports) {
                Laya.Stat.show();
            Laya.alertGlobalError = true;
            Laya.ResourceVersion.enable("version.json", Laya.Handler.create(this, this.onVersionLoaded), Laya.ResourceVersion.FILENAME_VERSION);
-           this.test();
        }
        hold() {
            this.mHold = true;
@@ -386,12 +425,6 @@ var laya = (function (exports) {
        }
        unLock() {
            this.mLock = false;
-       }
-       test() {
-           Http.get('http://localhost:3000/api/pos', { x: 1, y: 2 }, this, this.onTestSuccess);
-       }
-       onTestSuccess(res) {
-           console.log('res', res);
        }
        getMap() {
            return MAP_SOURCE[this.mapRow][this.mapColumn];
@@ -412,6 +445,7 @@ var laya = (function (exports) {
        resize(direction, animate) {
            const { roleX, roleY, newRoleX, newRoleY } = this;
            console.log('old role', roleX, roleY, newRoleX, newRoleY);
+           this.monster.fetchMonster({ x: this.roleX, y: this.roleY });
            if (animate === false) {
                const mapX = (this.newRoleX + this.patchX) * this.stepSize;
                const mapY = (this.newRoleY + this.patchY) * this.stepSize;
@@ -424,21 +458,19 @@ var laya = (function (exports) {
                this.unLock();
                return;
            }
-           Tween.to(this, { roleX: newRoleX, roleY: newRoleY, ease: Ease.linearNone, complete: Handler.create(this, this.onTweenComplete, [direction]), update: new Handler(this, this.onTweenUpdate, [this.roleX]) }, 10);
+           Tween.to(this, { roleX: newRoleX, roleY: newRoleY, ease: Ease.linearNone, complete: Handler.create(this, this.onTweenComplete, [direction]), update: new Handler(this, this.onTweenUpdate, [this.roleX]) }, 100);
        }
        onTweenComplete(direction) {
-           console.log('onTweenComplete', this.roleX, this.roleX);
            const mapX = (this.roleX + this.patchX) * this.stepSize;
            const mapY = (this.roleY + this.patchY) * this.stepSize;
            this.tMap.changeViewPort(mapX, mapY, Laya.Browser.width, Laya.Browser.height);
-           console.log('this mHold is ', this.mHold);
            this.unLock();
            const changeMap = this.shouldChangeMao();
+           console.log('onTweenComplete ', this.roleX, this.roleY, this.newRoleX, this.newRoleY);
            if (changeMap) {
                this.unHold();
                return;
            }
-           console.log('onTweenComplete newRoleX', this.newRoleX);
            if (this.mHold) {
                this.move(direction);
            }

@@ -1,6 +1,5 @@
 import GameConfig from "./GameConfig";
-import Http, { MResponse } from "./Http";
-
+import Monster from "./Monster";
 
 const { Tween, Ease, Handler } = Laya
 
@@ -31,6 +30,8 @@ class GameMain {
     private mapRow: number = 0
     private mapColumn: number = 0
 
+    private monster: Monster = new Monster()
+
     private hold() {
         this.mHold = true
     }
@@ -48,13 +49,7 @@ class GameMain {
     //按钮资源路径
     private skin: string = "button.png";
 
-    test() {
-        Http.get('http://localhost:3000/api/pos', { x: 1, y: 2 }, this, this.onTestSuccess)
-    }
-    onTestSuccess(res: MResponse) {
-        console.log('res', res)
 
-    }
     getMap(): string {
         return MAP_SOURCE[this.mapRow][this.mapColumn]
     }
@@ -94,8 +89,6 @@ class GameMain {
         //激活资源版本控制，version.json由IDE发布功能自动生成，如果没有也不影响后续流程
         Laya.ResourceVersion.enable("version.json", Laya.Handler.create(this, this.onVersionLoaded), Laya.ResourceVersion.FILENAME_VERSION);
 
-        this.test()
-
     }
     onConfigLoaded(): void {
         //加载IDE指定的场景
@@ -124,6 +117,9 @@ class GameMain {
         const { roleX, roleY, newRoleX, newRoleY } = this
         console.log('old role', roleX, roleY, newRoleX, newRoleY);
 
+        this.monster.fetchMonster({ x: this.roleX, y: this.roleY })
+
+
         if (animate === false) {
             const mapX = (this.newRoleX + this.patchX) * this.stepSize
             const mapY = (this.newRoleY + this.patchY) * this.stepSize
@@ -140,25 +136,20 @@ class GameMain {
 
         Tween.to(this,
             { roleX: newRoleX, roleY: newRoleY, ease: Ease.linearNone, complete: Handler.create(this, this.onTweenComplete, [direction]), update: new Handler(this, this.onTweenUpdate, [this.roleX]) }
-            , 10)
+            , 100)
     }
     onTweenComplete(direction: string) {
-        console.log('onTweenComplete', this.roleX, this.roleX);
         const mapX = (this.roleX + this.patchX) * this.stepSize
         const mapY = (this.roleY + this.patchY) * this.stepSize
         this.tMap.changeViewPort(mapX, mapY, Laya.Browser.width, Laya.Browser.height);
-        console.log('this mHold is ', this.mHold);
-
         this.unLock()
 
         const changeMap = this.shouldChangeMao()
+        console.log('onTweenComplete ', this.roleX, this.roleY, this.newRoleX, this.newRoleY);
         if (changeMap) {
             this.unHold()
             return
         }
-
-        console.log('onTweenComplete newRoleX', this.newRoleX);
-
         if (this.mHold) {
             this.move(direction)
         }
