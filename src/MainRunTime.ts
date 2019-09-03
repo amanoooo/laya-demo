@@ -24,7 +24,7 @@ export default class MainRunTime extends Laya.Scene {
 
         this.roleAni.pos(patchX, patchY)
         this.roleAni.loadAtlas("res/atlas/girl.atlas", Laya.Handler.create(this, this.onLoaded));
-
+        this.roleAni.zOrder = 100
 
     }
 

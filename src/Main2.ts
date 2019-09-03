@@ -4,23 +4,32 @@ import Http, { MResponse } from "./Http";
 
 const { Tween, Ease, Handler } = Laya
 
+const SIDE_LENGTH: number = 49
+const FIRST_POS: number = 49
+
+const MAP_SOURCE = [
+    ['res/demo4.json', 'res/demo6.json'],
+    ['res/demo5.json', 'res/demo7.json']
+]
+
 // 程序入口
 class GameMain {
     private tMap: Laya.TiledMap;
     private scaleValue: number = 0;
 
-    private mLastMouseX: number;
-    private mLastMouseY: number;
     private stepSize = 32
     private patchX: number = 0 // index
     private patchY: number = 0 // index
-    private roleX: number = 0 // index
-    private roleY: number = 0 // index
-    private newRoleX: number = 0 // index
-    private newRoleY: number = 0 // index
+    private roleX: number = FIRST_POS // index
+    private roleY: number = FIRST_POS // index
+    private newRoleX: number = FIRST_POS // index
+    private newRoleY: number = FIRST_POS // index
 
     private mLock: boolean = false
     private mHold: boolean = false
+
+    private mapRow: number = 0
+    private mapColumn: number = 0
 
     private hold() {
         this.mHold = true
@@ -44,6 +53,10 @@ class GameMain {
     }
     onTestSuccess(res: MResponse) {
         console.log('res', res)
+
+    }
+    getMap(): string {
+        return MAP_SOURCE[this.mapRow][this.mapColumn]
     }
 
     constructor() {
@@ -55,7 +68,7 @@ class GameMain {
 
         this.tMap = new Laya.TiledMap();
         var viewRect: Laya.Rectangle = new Laya.Rectangle();
-        this.tMap.createMap("res/demo4.json", viewRect, Laya.Handler.create(this, this.onMapLoaded));
+        this.tMap.createMap(this.getMap(), viewRect, Laya.Handler.create(this, this.onMapLoaded));
 
         Laya.init(bWidth, bHeight, Laya.WebGL);
 
@@ -98,14 +111,8 @@ class GameMain {
         this.tMap.scale = 1;
         Laya.stage.on(Laya.Event.RESIZE, this, this.resize);
 
-        this.resize();
-        console.log('tMap', this.tMap)
-        const a = this.tMap.getSprite(1, 32, 32)
-        console.log('a', a);
-        const layer = this.tMap.getLayerByIndex(0)
-        console.log('layer ', layer);
-        const s0 = this.tMap.getSprite(0, 0, 0)
-        console.log('so ', s0);
+        this.resize(undefined, false);
+        console.log('onMapLoaded tMap', this.tMap)
     }
 
 
@@ -113,30 +120,45 @@ class GameMain {
      *  改变视口大小
      *  重设地图视口区域
      */
-    private resize(direction?: string): void {
+    private resize(direction?: string, animate?: boolean): void {
         const { roleX, roleY, newRoleX, newRoleY } = this
-        console.log('old role', roleX, roleY);
+        console.log('old role', roleX, roleY, newRoleX, newRoleY);
 
-        if (roleX === newRoleX && roleY === newRoleY) {
-            const mapX = (this.roleX + this.patchX) * this.stepSize
-            const mapY = (this.roleY + this.patchY) * this.stepSize
+        if (animate === false) {
+            const mapX = (this.newRoleX + this.patchX) * this.stepSize
+            const mapY = (this.newRoleY + this.patchY) * this.stepSize
             this.tMap.changeViewPort(mapX, mapY, Laya.Browser.width, Laya.Browser.height);
+            return
+        }
+
+        const shouldMove = this.shouldMove()
+        if (shouldMove) {
+            this.unHold()
+            this.unLock()
             return
         }
 
         Tween.to(this,
             { roleX: newRoleX, roleY: newRoleY, ease: Ease.linearNone, complete: Handler.create(this, this.onTweenComplete, [direction]), update: new Handler(this, this.onTweenUpdate, [this.roleX]) }
-            , 500)
-
+            , 10)
     }
     onTweenComplete(direction: string) {
-        console.log('onTweenComplete', this.roleX, this.roleX, );
+        console.log('onTweenComplete', this.roleX, this.roleX);
         const mapX = (this.roleX + this.patchX) * this.stepSize
         const mapY = (this.roleY + this.patchY) * this.stepSize
         this.tMap.changeViewPort(mapX, mapY, Laya.Browser.width, Laya.Browser.height);
         console.log('this mHold is ', this.mHold);
 
         this.unLock()
+
+        const changeMap = this.shouldChangeMao()
+        if (changeMap) {
+            this.unHold()
+            return
+        }
+
+        console.log('onTweenComplete newRoleX', this.newRoleX);
+
         if (this.mHold) {
             this.move(direction)
         }
@@ -157,11 +179,63 @@ class GameMain {
             indexY
         }
     }
+    shouldMove(): boolean {
+        if (this.mapRow >= MAP_SOURCE.length - 1 && this.newRoleX > SIDE_LENGTH) {
+            console.log('右边界');
+            return true
+        } else if (this.mapRow <= 0 && this.newRoleX < 0) {
+            console.log('左边界');
+            return true
+        } else if (this.mapColumn >= MAP_SOURCE.length - 1 && this.newRoleY > SIDE_LENGTH) {
+            console.log('下边界');
+            return true
+        } else if (this.mapColumn <= 0 && this.newRoleY < 0) {
+            console.log('上边界');
+            return true
+        }
+        return false
+    }
+    shouldChangeMao(): boolean {
+        if (this.newRoleX > SIDE_LENGTH) {
+            this.mapRow += 1
+            this.tMap.destroy()
+            var viewRect: Laya.Rectangle = new Laya.Rectangle();
+            this.tMap.createMap(this.getMap(), viewRect, Laya.Handler.create(this, this.onMapLoaded));
+            this.newRoleX = 0
+            this.roleX = 0
+            return true
+        } else if (this.newRoleX < 0) {
+            this.mapRow -= 1
+            this.tMap.destroy()
+            var viewRect: Laya.Rectangle = new Laya.Rectangle();
+            this.tMap.createMap(this.getMap(), viewRect, Laya.Handler.create(this, this.onMapLoaded));
+            this.newRoleX = SIDE_LENGTH
+            this.roleX = SIDE_LENGTH
+            return true
+        } else if (this.newRoleY > SIDE_LENGTH) {
+            this.mapColumn += 1
+            this.tMap.destroy()
+            var viewRect: Laya.Rectangle = new Laya.Rectangle();
+            this.tMap.createMap(this.getMap(), viewRect, Laya.Handler.create(this, this.onMapLoaded));
+            this.newRoleY = 0
+            this.roleY = 0
+            return true
+        } else if (this.newRoleY < 0) {
+            this.mapColumn -= 1
+            this.tMap.destroy()
+            var viewRect: Laya.Rectangle = new Laya.Rectangle();
+            this.tMap.createMap(this.getMap(), viewRect, Laya.Handler.create(this, this.onMapLoaded));
+            this.newRoleY = SIDE_LENGTH
+            this.roleY = SIDE_LENGTH
+            return true
+        }
+        return false
+    }
     cancelMove(): void {
         this.unHold()
     }
     move(direction: string): void {
-        console.log('mlock is', this.mLock);
+        // console.log('mlock is', this.mLock);
 
         if (this.mLock) {
             return
@@ -190,12 +264,12 @@ class GameMain {
 
         const tileData = this.tMap.getLayerByIndex(0).getTileData(this.newRoleX, this.newRoleY)
 
-        if (tileData === 1) {
-            console.log('return due to (%d, %d) data is 1', this.newRoleX, this.newRoleY, tileData)
-            this.unHold()
-            this.unLock()
-            return
-        }
+        // if (tileData === 1) {
+        //     console.log('return due to (%d, %d) data is 1', this.newRoleX, this.newRoleY, tileData)
+        //     this.unHold()
+        //     this.unLock()
+        //     return
+        // }
 
 
         this.resize(direction)
