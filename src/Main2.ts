@@ -1,10 +1,11 @@
 import GameConfig from "./GameConfig";
 import Monster from "./Monster";
+import { setPatch, getPatch, DURATION } from "./globals";
 
 const { Tween, Ease, Handler } = Laya
 
 const SIDE_LENGTH: number = 49
-const FIRST_POS: number = 49
+const FIRST_POS: number = 25
 
 const MAP_SOURCE = [
     ['res/demo4.json', 'res/demo6.json'],
@@ -17,8 +18,6 @@ class GameMain {
     private scaleValue: number = 0;
 
     private stepSize = 32
-    private patchX: number = 0 // index
-    private patchY: number = 0 // index
     private roleX: number = FIRST_POS // index
     private roleY: number = FIRST_POS // index
     private newRoleX: number = FIRST_POS // index
@@ -67,8 +66,10 @@ class GameMain {
 
         Laya.init(bWidth, bHeight, Laya.WebGL);
 
-        this.patchX = - Math.round(bWidth / 2 / this.stepSize)
-        this.patchY = - Math.round(bHeight / 2 / this.stepSize)
+        setPatch({
+            x: - Math.round(bWidth / 2 / this.stepSize),
+            y: - Math.round(bHeight / 2 / this.stepSize)
+        })
 
         Laya.stage.bgColor = "#5a7b9a";
         Laya["Physics"] && Laya["Physics"].enable();
@@ -115,14 +116,13 @@ class GameMain {
      */
     private resize(direction?: string, animate?: boolean): void {
         const { roleX, roleY, newRoleX, newRoleY } = this
-        console.log('old role', roleX, roleY, newRoleX, newRoleY);
+        // console.log('old role', roleX, roleY, newRoleX, newRoleY);
 
-        this.monster.fetchMonster({ x: this.roleX, y: this.roleY })
-
+        this.monster.fetchMonster({ x: this.newRoleX, y: this.newRoleY })
 
         if (animate === false) {
-            const mapX = (this.newRoleX + this.patchX) * this.stepSize
-            const mapY = (this.newRoleY + this.patchY) * this.stepSize
+            const mapX = (this.newRoleX + getPatch('x')) * this.stepSize
+            const mapY = (this.newRoleY + getPatch('y')) * this.stepSize
             this.tMap.changeViewPort(mapX, mapY, Laya.Browser.width, Laya.Browser.height);
             return
         }
@@ -136,16 +136,16 @@ class GameMain {
 
         Tween.to(this,
             { roleX: newRoleX, roleY: newRoleY, ease: Ease.linearNone, complete: Handler.create(this, this.onTweenComplete, [direction]), update: new Handler(this, this.onTweenUpdate, [this.roleX]) }
-            , 100)
+            , DURATION)
     }
     onTweenComplete(direction: string) {
-        const mapX = (this.roleX + this.patchX) * this.stepSize
-        const mapY = (this.roleY + this.patchY) * this.stepSize
+        const mapX = (this.roleX + getPatch('x')) * this.stepSize
+        const mapY = (this.roleY + getPatch('y')) * this.stepSize
         this.tMap.changeViewPort(mapX, mapY, Laya.Browser.width, Laya.Browser.height);
         this.unLock()
 
         const changeMap = this.shouldChangeMao()
-        console.log('onTweenComplete ', this.roleX, this.roleY, this.newRoleX, this.newRoleY);
+        // console.log('onTweenComplete ', this.roleX, this.roleY, this.newRoleX, this.newRoleY);
         if (changeMap) {
             this.unHold()
             return
@@ -155,8 +155,8 @@ class GameMain {
         }
     }
     onTweenUpdate() {
-        const mapX = (this.roleX + this.patchX) * this.stepSize
-        const mapY = (this.roleY + this.patchY) * this.stepSize
+        const mapX = (this.roleX + getPatch('x')) * this.stepSize
+        const mapY = (this.roleY + getPatch('y')) * this.stepSize
         this.tMap.changeViewPort(mapX, mapY, Laya.Browser.width, Laya.Browser.height);
     }
 

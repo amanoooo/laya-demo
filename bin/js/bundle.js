@@ -19,8 +19,6 @@ var laya = (function (exports) {
        scaleSmall(e) {
            e.stopPropagation();
            Laya.Tween.to(this, { scaleX: 0.9, scaleY: 0.9 }, this.scaleTime);
-           let Hero;
-           Hero = this.parent.parent.getChildByName('Hero');
            switch (this.name) {
                case 'up':
                    game.move('up');
@@ -71,6 +69,7 @@ var laya = (function (exports) {
        onOpened() {
            const DirectionWrapper = this.getChildByName('Direction');
            DirectionWrapper.scene.pos(Laya.Browser.width - 70, Laya.Browser.height - 70);
+           DirectionWrapper.scene.zOrder = 100;
            this.roleAni = new Laya.Animation();
            console.log(111);
            this.roleAni.scaleX = 1;
@@ -326,6 +325,18 @@ var laya = (function (exports) {
    }
    var Http = new HTTP();
 
+   let patch = {
+       x: 0,
+       y: 0
+   };
+   function getPatch(prop) {
+       return patch[prop];
+   }
+   function setPatch(p) {
+       patch = p;
+   }
+   const DURATION = 200;
+
    function isType1(pos) {
        if (pos.x) {
            return true;
@@ -341,12 +352,16 @@ var laya = (function (exports) {
    function randomNumber() {
        return Math.round(Math.random() * 5);
    }
-   class Monster {
+   let _monsterArr;
+   let time = 1;
+   class MMonster {
        constructor() {
            this.x = 0;
            this.y = 0;
            this.longitude = 0;
            this.latitude = 0;
+           this.monters = [];
+           this.monsterPoss = [];
        }
        fetchMonster(pos) {
            if (isType1(pos)) {
@@ -361,13 +376,66 @@ var laya = (function (exports) {
        }
        onFetchMonster(res) {
            const monsterArr = new Array(randomNumber()).fill(1).map(() => randomMonster(this.x, this.y));
-           console.log('monsterArr', monsterArr);
+           if (time < 50) {
+               if (time === 1) {
+                   _monsterArr = monsterArr;
+               }
+               time++;
+               this.render(_monsterArr);
+           }
+           else {
+               time = 1;
+               this.render(monsterArr);
+           }
+       }
+       clearMonster() {
+           for (let index = 0; index < this.monters.length; index++) {
+               this.monters[index].destroy();
+           }
+           this.monters.forEach(m => {
+               m.destroy();
+           });
+           this.monters = [];
+       }
+       moveMonster(item, index) {
+           console.log('monster', this.x, this.y);
+           const mapX = (item.x - this.x - getPatch('x')) * 32;
+           const mapY = (item.y - this.y - getPatch('y')) * 32;
+           Laya.Tween.to(this.monters[index], { x: mapX, y: mapY }, DURATION);
+       }
+       render(monsterArr) {
+           if (JSON.stringify(monsterArr) === JSON.stringify(this.monsterPoss)) {
+               this.monsterPoss.forEach((item, index) => this.moveMonster(item, index));
+               return;
+           }
+           console.log('render monsterArr', monsterArr);
+           this.clearMonster();
+           this.monsterPoss = monsterArr;
+           monsterArr.forEach(item => {
+               const monster = new Laya.Animation();
+               monster.scaleX = 1;
+               monster.scaleY = 1;
+               const mapX = (item.x - this.x - getPatch('x')) * 32;
+               const mapY = (item.y - this.y - getPatch('y')) * 32;
+               console.log('mapX', mapX);
+               console.log('mapY', mapY);
+               monster.pos(mapX, mapY);
+               monster.loadImage("res/duck.png", Laya.Handler.create(this, this.onLoaded, [monster]));
+               monster.width = 32;
+               monster.height = 32;
+               monster.zOrder = 100;
+           });
+       }
+       onLoaded(monster) {
+           Laya.stage.addChild(monster);
+           monster.play();
+           this.monters.push(monster);
        }
    }
 
    const { Tween, Ease, Handler } = Laya;
    const SIDE_LENGTH = 49;
-   const FIRST_POS = 49;
+   const FIRST_POS = 25;
    const MAP_SOURCE = [
        ['res/demo4.json', 'res/demo6.json'],
        ['res/demo5.json', 'res/demo7.json']
@@ -376,8 +444,6 @@ var laya = (function (exports) {
        constructor() {
            this.scaleValue = 0;
            this.stepSize = 32;
-           this.patchX = 0;
-           this.patchY = 0;
            this.roleX = FIRST_POS;
            this.roleY = FIRST_POS;
            this.newRoleX = FIRST_POS;
@@ -386,7 +452,7 @@ var laya = (function (exports) {
            this.mHold = false;
            this.mapRow = 0;
            this.mapColumn = 0;
-           this.monster = new Monster();
+           this.monster = new MMonster();
            this.skin = "button.png";
            const bWidth = Laya.Browser.width;
            const bHeight = Laya.Browser.height;
@@ -395,8 +461,10 @@ var laya = (function (exports) {
            var viewRect = new Laya.Rectangle();
            this.tMap.createMap(this.getMap(), viewRect, Laya.Handler.create(this, this.onMapLoaded));
            Laya.init(bWidth, bHeight, Laya.WebGL);
-           this.patchX = -Math.round(bWidth / 2 / this.stepSize);
-           this.patchY = -Math.round(bHeight / 2 / this.stepSize);
+           setPatch({
+               x: -Math.round(bWidth / 2 / this.stepSize),
+               y: -Math.round(bHeight / 2 / this.stepSize)
+           });
            Laya.stage.bgColor = "#5a7b9a";
            Laya["Physics"] && Laya["Physics"].enable();
            Laya["DebugPanel"] && Laya["DebugPanel"].enable();
@@ -444,11 +512,10 @@ var laya = (function (exports) {
        }
        resize(direction, animate) {
            const { roleX, roleY, newRoleX, newRoleY } = this;
-           console.log('old role', roleX, roleY, newRoleX, newRoleY);
-           this.monster.fetchMonster({ x: this.roleX, y: this.roleY });
+           this.monster.fetchMonster({ x: this.newRoleX, y: this.newRoleY });
            if (animate === false) {
-               const mapX = (this.newRoleX + this.patchX) * this.stepSize;
-               const mapY = (this.newRoleY + this.patchY) * this.stepSize;
+               const mapX = (this.newRoleX + getPatch('x')) * this.stepSize;
+               const mapY = (this.newRoleY + getPatch('y')) * this.stepSize;
                this.tMap.changeViewPort(mapX, mapY, Laya.Browser.width, Laya.Browser.height);
                return;
            }
@@ -458,15 +525,14 @@ var laya = (function (exports) {
                this.unLock();
                return;
            }
-           Tween.to(this, { roleX: newRoleX, roleY: newRoleY, ease: Ease.linearNone, complete: Handler.create(this, this.onTweenComplete, [direction]), update: new Handler(this, this.onTweenUpdate, [this.roleX]) }, 100);
+           Tween.to(this, { roleX: newRoleX, roleY: newRoleY, ease: Ease.linearNone, complete: Handler.create(this, this.onTweenComplete, [direction]), update: new Handler(this, this.onTweenUpdate, [this.roleX]) }, DURATION);
        }
        onTweenComplete(direction) {
-           const mapX = (this.roleX + this.patchX) * this.stepSize;
-           const mapY = (this.roleY + this.patchY) * this.stepSize;
+           const mapX = (this.roleX + getPatch('x')) * this.stepSize;
+           const mapY = (this.roleY + getPatch('y')) * this.stepSize;
            this.tMap.changeViewPort(mapX, mapY, Laya.Browser.width, Laya.Browser.height);
            this.unLock();
            const changeMap = this.shouldChangeMao();
-           console.log('onTweenComplete ', this.roleX, this.roleY, this.newRoleX, this.newRoleY);
            if (changeMap) {
                this.unHold();
                return;
@@ -476,8 +542,8 @@ var laya = (function (exports) {
            }
        }
        onTweenUpdate() {
-           const mapX = (this.roleX + this.patchX) * this.stepSize;
-           const mapY = (this.roleY + this.patchY) * this.stepSize;
+           const mapX = (this.roleX + getPatch('x')) * this.stepSize;
+           const mapY = (this.roleY + getPatch('y')) * this.stepSize;
            this.tMap.changeViewPort(mapX, mapY, Laya.Browser.width, Laya.Browser.height);
        }
        getCoordinate(x, y) {

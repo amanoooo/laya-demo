@@ -33,24 +33,18 @@ export default class DirectionRunTime extends Laya.Button {
         e.stopPropagation();
         //缩小至0.8的缓动效果
         Laya.Tween.to(this, { scaleX: 0.9, scaleY: 0.9 }, this.scaleTime);
-        let Hero: Laya.Image
-        Hero = this.parent.parent.getChildByName('Hero') as Laya.Image
 
         switch (this.name) {
             case 'up':
-                // Hero.pivotY += +5
                 game.move('up')
                 break;
             case 'down':
-                // Hero.pivotY += -5
                 game.move('down')
                 break;
             case 'left':
-                // Hero.pivotX += 5
                 game.move('left')
                 break;
             case 'right':
-                // Hero.pivotX += -5
                 game.move('right')
                 break;
             default:
