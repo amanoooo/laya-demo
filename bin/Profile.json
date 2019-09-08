@@ -1,0 +1,1 @@
+{"type":"Dialog","props":{"width":300,"runtime":"ProfileRuntime.ts","height":500},"compId":2,"child":[{"type":"Button","props":{"y":28,"x":247,"var":"btnClose","skin":"comp/btn_close.png","name":"btnClose"},"compId":26},{"type":"Sprite","props":{"y":28,"x":247,"name":"bgProfile"},"compId":28}],"loadList":["comp/btn_close.png"],"loadList3D":[]}

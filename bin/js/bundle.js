@@ -62,6 +62,98 @@ var laya = (function (exports) {
        }
    }
 
+   class MenuItemRunTime extends Laya.Button {
+       constructor() {
+           super();
+           console.log('menu item constructor ', this);
+           this.on(Laya.Event.CLICK, this, this.onClick);
+       }
+       onClick() {
+           switch (this.name) {
+               case 'setting':
+                   console.log('setting click');
+                   break;
+               case 'friend':
+                   console.log('friend click');
+                   break;
+               case 'profile':
+                   console.log('profile click');
+                   Laya.Scene.open('Profile.scene');
+                   break;
+               default:
+                   console.log('warning not expect click');
+                   break;
+           }
+       }
+       onOpened() {
+           console.log('MenuItemRunTime on Opened', this);
+       }
+   }
+
+   var List = Laya.List;
+   var Handler = Laya.Handler;
+   var Box = Laya.Box;
+   var Label = Laya.Label;
+   class ProfileRunTime extends Laya.Dialog {
+       constructor() {
+           super();
+           console.log('profile constructor ', this);
+           this.setup();
+           UIConfig.popupBgColor = '#ffa11a';
+       }
+       onEnable() {
+           const closeBtn = this.scene.getChildByName('btnClose');
+           const bg = this.scene.getChildByName('bgProfile');
+           console.log('closeBtn', closeBtn);
+           console.log('bg', bg);
+           closeBtn.on(Laya.Event.CLICK, this, this.onClick);
+       }
+       onClick() {
+           console.log('close onClick');
+           this.close();
+       }
+       setup() {
+           var list = new List();
+           list.itemRender = Item;
+           list.repeatX = 1;
+           list.repeatY = 4;
+           list.vScrollBarSkin = "";
+           list.selectEnable = true;
+           list.selectHandler = new Handler(this, this.onSelect);
+           list.renderHandler = new Handler(this, this.updateItem);
+           this.addChild(list);
+           var data = [];
+           for (var i = 0; i < 10; ++i) {
+               data.push("res/ui/listskins/1.jpg");
+               data.push("res/ui/listskins/2.jpg");
+               data.push("res/ui/listskins/3.jpg");
+               data.push("res/ui/listskins/4.jpg");
+               data.push("res/ui/listskins/5.jpg");
+           }
+           list.array = data;
+       }
+       updateItem(cell, index) {
+           cell.setImg(cell.dataSource);
+       }
+       onSelect(index) {
+           console.log("当前选择的索引：" + index);
+       }
+   }
+   class Item extends Box {
+       constructor() {
+           super();
+           this.size(Item.WID, Item.HEI);
+           this.img = new Label();
+           this.img.fontSize = 16;
+           this.addChild(this.img);
+       }
+       setImg(src) {
+           this.img.text = src;
+       }
+   }
+   Item.WID = 373;
+   Item.HEI = 30;
+
    class MainRunTime extends Laya.Scene {
        constructor() {
            super();
@@ -79,6 +171,8 @@ var laya = (function (exports) {
            this.roleAni.pos(patchX, patchY);
            this.roleAni.loadAtlas("res/atlas/girl.atlas", Laya.Handler.create(this, this.onLoaded));
            this.roleAni.zOrder = 100;
+           Laya.stage.addChild(this.roleAni);
+           Laya.Scene.open('Menu.scene');
        }
        onLoaded() {
            console.log('this.roleAni', this.roleAni);
@@ -255,6 +349,8 @@ var laya = (function (exports) {
        static init() {
            var reg = Laya.ClassUtils.regClass;
            reg("DirectionRunTime.ts", DirectionRunTime);
+           reg("MenuItemRuntime.ts", MenuItemRunTime);
+           reg("ProfileRuntime.ts", ProfileRunTime);
            reg("MainRunTime.ts", MainRunTime);
            reg("script/GameUI.ts", GameUI);
            reg("script/GameControl.ts", GameControl);
@@ -272,7 +368,7 @@ var laya = (function (exports) {
    GameConfig.sceneRoot = "";
    GameConfig.debug = true;
    GameConfig.stat = false;
-   GameConfig.physicsDebug = false;
+   GameConfig.physicsDebug = true;
    GameConfig.exportSceneToJson = true;
    GameConfig.init();
 
@@ -433,7 +529,7 @@ var laya = (function (exports) {
        }
    }
 
-   const { Tween, Ease, Handler } = Laya;
+   const { Tween, Ease, Handler: Handler$1 } = Laya;
    const SIDE_LENGTH = 49;
    const FIRST_POS = 25;
    const MAP_SOURCE = [
@@ -525,7 +621,7 @@ var laya = (function (exports) {
                this.unLock();
                return;
            }
-           Tween.to(this, { roleX: newRoleX, roleY: newRoleY, ease: Ease.linearNone, complete: Handler.create(this, this.onTweenComplete, [direction]), update: new Handler(this, this.onTweenUpdate, [this.roleX]) }, DURATION);
+           Tween.to(this, { roleX: newRoleX, roleY: newRoleY, ease: Ease.linearNone, complete: Handler$1.create(this, this.onTweenComplete, [direction]), update: new Handler$1(this, this.onTweenUpdate, [this.roleX]) }, DURATION);
        }
        onTweenComplete(direction) {
            const mapX = (this.roleX + getPatch('x')) * this.stepSize;
